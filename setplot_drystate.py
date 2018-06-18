@@ -108,12 +108,8 @@ def setplot(plotdata,rho,dry_tolerance):
         return entropy_at_x
 
     def entropy(cd):
-        #print('==============================================================================================')
-        #print(len(cd.x))
-        #print(cd.x.shape)
-        index = np.nonzero(cd.x>0)
-        #print(index)
-        entropy = np.zeros(cd.x.shape)
+        index = np.nonzero(h_1(cd) > dry_tolerance)
+        entropy = np.zeros(h_1(cd).shape)
         entropy[index] = entropy_at_x(cd.q, index)
         return entropy
 
@@ -126,7 +122,7 @@ def setplot(plotdata,rho,dry_tolerance):
         return entropy_flux_at_x
 
     def entropy_flux(cd):
-        index = np.nonzero(cd.x>0)
+        index = np.nonzero(h_1(cd)>dry_tolerance)
         entropy_flux = np.zeros(h_1(cd).shape)
         entropy_flux[index] = entropy_flux_at_x(cd.q,index)
 
@@ -370,6 +366,41 @@ def setplot(plotdata,rho,dry_tolerance):
     # Entropy
     plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
     plotitem.plot_var = entropy
+    plotitem.color = 'b'
+    plotitem.show = True
+
+
+
+	# Parameters used only when creating html and/or latex hardcopy
+    # e.g., via pyclaw.plotters.frametools.printframes:
+
+    plotdata.printfigs = True                # print figures
+    plotdata.print_format = 'png'            # file format
+    plotdata.print_framenos = 'all'          # list of frames to print
+    plotdata.print_fignos = 'all'            # list of figures to print
+    plotdata.html = True                     # create html files of plots?
+    plotdata.html_homelink = '../README.html'   # pointer for top of index
+    plotdata.latex = True                    # create latex file of plots?
+    plotdata.latex_figsperline = 2           # layout of plots
+    plotdata.latex_framesperline = 1         # layout of plots
+    plotdata.latex_makepdf = False           # also run pdflatex?
+
+
+    # ====================================================
+    # Plot Entropy flux
+    # ====================================================
+
+    plotfigure = plotdata.new_plotfigure(name="entropy flux")
+    plotfigure.show = True
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.title = "Entropy flux"
+    plotaxes.xlimits = 'auto'
+    plotaxes.ylimits = 'auto'
+
+    # Entropy
+    plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
+    plotitem.plot_var = entropy_flux
     plotitem.color = 'b'
     plotitem.show = True
 
