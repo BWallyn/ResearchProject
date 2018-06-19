@@ -31,6 +31,8 @@ matplotlib.rcParams['savefig.dpi'] = 100
 
 # Need to do this after the above
 import matplotlib.pyplot as mpl
+from copy import deepcopy
+from copy import copy
 
 from clawpack.pyclaw.solution import Solution
 
@@ -138,12 +140,15 @@ def setplot(plotdata,rho,dry_tolerance):
             delta_x = cd.dx
             entropy_cond = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
             index_x = np.nonzero(np.all([h_1(cd)>dry_tolerance, h_2(cd)>dry_tolerance],axis=0))
-            entropy_flux_a = 0
+            index_x_array = index_x[0]
+            index_x_next=(deepcopy(index_x_array[1:]),)
+            index_x_array = index_x_array[:len(index_x_array)-1]
+            index_x=(index_x_array,)
+            entropy_flux_actual = entropy_flux_at_x(cd.q, index_x)
             entropy=entropy_at_x(cd.q,index_x)
             entropy_prev=entropy_at_x(Solution(index_t-1, path=plotdata.outdir,read_aux=True).q,index_x)
-            entropy_flux_n = entropy_flux_at_x(cd.q, index_x)
-            entropy_cond[index_x]= entropy-entropy_prev + (delta_t/delta_x)*(entropy_flux_n-entropy_flux_a)
-            entropy_flux_a = entropy_flux_n
+            entropy_flux_prev = entropy_flux_at_x(cd.q, index_x_next)
+            entropy_cond[index_x]= entropy-entropy_prev + (delta_t/delta_x)*(entropy_flux_actual-entropy_flux_prev)
             return entropy_cond
         else :
             return([0]*500)
