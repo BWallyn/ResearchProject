@@ -108,12 +108,8 @@ def setplot(plotdata,rho,dry_tolerance):
         return entropy_at_x
 
     def entropy(cd):
-        #print('==============================================================================================')
-        #print(len(cd.x))
-        #print(cd.x.shape)
-        index = np.nonzero(cd.x>0)
-        #print(index)
-        entropy = np.zeros(cd.x.shape)
+        index = np.nonzero(np.all([h_1(cd) > dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
+        entropy = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
         entropy[index] = entropy_at_x(cd.q, index)
         return entropy
 
@@ -126,31 +122,28 @@ def setplot(plotdata,rho,dry_tolerance):
         return entropy_flux_at_x
 
     def entropy_flux(cd):
-        index = np.nonzero(cd.x>0)
-        entropy_flux = np.zeros(h_1(cd).shape)
+        index = np.nonzero(np.all([h_1(cd)>dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
+        entropy_flux = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
         entropy_flux[index] = entropy_flux_at_x(cd.q,index)
 
         return entropy_flux
 
+
     def entropy_condition_is_valid(cd):
 
-        index_t = cd.frameno
+        index_t = int(cd.frameno)
         if index_t>0 :
-            #entropy at t doesn't exist
-            x=cd.x
+            #entropy at t=0 doesn't exist
             delta_t = Solution(index_t, path=plotdata.outdir,read_aux=True).t - Solution(index_t-1, path=plotdata.outdir,read_aux=True).t
             delta_x = cd.dx
-            entropy_cond = np.zeros(h_1(cd).shape)
-
-            for index_x in range(len(x)):
-                if index_x != len(x)-1 :
-                    entropy=entropy_at_x(Solution(index_t, path=plotdata.outdir,read_aux=True).state.q,index_x)
-                    entropy_prev=entropy_at_x(Solution(index_t-1, path=plotdata.outdir,read_aux=True).state.q,index_x)
-                    entropy_flux_n = entropy_flux_at_x(cd.q, index_x+1)
-                    entropy_flux_a = entropy_flux_at_x(cd.q, index_x)
-                    entropy_cond[index_x]= entropy-entropy_prev + (delta_t/delta_x)*(entropy_flux_n-entropy_flux_a)
-                else :
-                    entropy_cond[index_x] = entropy_cond[index_x-1]
+            entropy_cond = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+            index_x = np.nonzero(np.all([h_1(cd)>dry_tolerance, h_2(cd)>dry_tolerance],axis=0))
+            entropy_flux_a = 0
+            entropy=entropy_at_x(cd.q,index_x)
+            entropy_prev=entropy_at_x(Solution(index_t-1, path=plotdata.outdir,read_aux=True).q,index_x)
+            entropy_flux_n = entropy_flux_at_x(cd.q, index_x)
+            entropy_cond[index_x]= entropy-entropy_prev + (delta_t/delta_x)*(entropy_flux_n-entropy_flux_a)
+            entropy_flux_a = entropy_flux_n
             return entropy_cond
         else :
             return([0]*500)
@@ -364,12 +357,47 @@ def setplot(plotdata,rho,dry_tolerance):
 
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.title = "Entropy"
-    plotaxes.xlimits = 'auto'
+    plotaxes.xlimits = xlimits
+    plotaxes.ylimits = 'auto'
+
+    # Entropy
+    plotitem = plotaxes.new_plotitem(plot_type='1d')
+    plotitem.plot_var = entropy
+    plotitem.color = 'b'
+    plotitem.show = True
+
+
+
+	# Parameters used only when creating html and/or latex hardcopy
+    # e.g., via pyclaw.plotters.frametools.printframes:
+
+    plotdata.printfigs = True                # print figures
+    plotdata.print_format = 'png'            # file format
+    plotdata.print_framenos = 'all'          # list of frames to print
+    plotdata.print_fignos = 'all'            # list of figures to print
+    plotdata.html = True                     # create html files of plots?
+    plotdata.html_homelink = '../README.html'   # pointer for top of index
+    plotdata.latex = True                    # create latex file of plots?
+    plotdata.latex_figsperline = 2           # layout of plots
+    plotdata.latex_framesperline = 1         # layout of plots
+    plotdata.latex_makepdf = False           # also run pdflatex?
+
+
+    # ====================================================
+    # Plot Entropy flux
+    # ====================================================
+
+    plotfigure = plotdata.new_plotfigure(name="entropy flux")
+    plotfigure.show = True
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.title = "Entropy flux"
+    plotaxes.xlimits = xlimits
     plotaxes.ylimits = 'auto'
 
     # Entropy
     plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
-    plotitem.plot_var = entropy
+    plotitem.plot_var = entropy_flux
     plotitem.color = 'b'
     plotitem.show = True
 
@@ -398,7 +426,7 @@ def setplot(plotdata,rho,dry_tolerance):
 
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.title = "Entropy Condition"
-    plotaxes.xlimits = 'auto'
+    plotaxes.xlimits = xlimits
     plotaxes.ylimits = 'auto'
 
     # Entropy
