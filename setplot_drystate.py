@@ -108,8 +108,13 @@ def setplot(plotdata,rho,dry_tolerance):
         return entropy_at_x
 
     def entropy(cd):
+<<<<<<< HEAD
         index = np.nonzero(np.all([h_1(cd) > dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
         entropy = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+=======
+        index = np.nonzero(h_1(cd) > dry_tolerance)
+        entropy = np.zeros(h_1(cd).shape)
+>>>>>>> 5df35b15fa24393680b968f9852e1c851b54ebf6
         entropy[index] = entropy_at_x(cd.q, index)
         return entropy
 
@@ -122,8 +127,13 @@ def setplot(plotdata,rho,dry_tolerance):
         return entropy_flux_at_x
 
     def entropy_flux(cd):
+<<<<<<< HEAD
         index = np.nonzero(np.all([h_1(cd)>dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
         entropy_flux = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+=======
+        index = np.nonzero(h_1(cd)>dry_tolerance)
+        entropy_flux = np.zeros(h_1(cd).shape)
+>>>>>>> 5df35b15fa24393680b968f9852e1c851b54ebf6
         entropy_flux[index] = entropy_flux_at_x(cd.q,index)
 
         return entropy_flux
@@ -392,7 +402,11 @@ def setplot(plotdata,rho,dry_tolerance):
 
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.title = "Entropy flux"
+<<<<<<< HEAD
     plotaxes.xlimits = xlimits
+=======
+    plotaxes.xlimits = 'auto'
+>>>>>>> 5df35b15fa24393680b968f9852e1c851b54ebf6
     plotaxes.ylimits = 'auto'
 
     # Entropy
