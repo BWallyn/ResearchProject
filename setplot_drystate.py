@@ -153,6 +153,9 @@ def setplot(plotdata,rho,dry_tolerance):
         else :
             return([0]*500)
 
+    def dry_tolerance_(cd):
+        return ([dry_tolerance]*(len(cd.q[1])) )
+
     plotdata.clearfigures()  # clear any old figures,axes,items data
 
     # Window Settings
@@ -163,6 +166,11 @@ def setplot(plotdata,rho,dry_tolerance):
     ylimits_depth_zoomed = ylimits_depth
     ylimits_velocities = [-0.75,0.75]
     ylimits_velocities_zoomed = ylimits_velocities
+    y_limits_entropy = [-5.0 , 0.5]
+    y_limits_entropy_flux = [-0.023 , 0.003 ]
+    y_limits_entropy_condition = y_limits_entropy_flux
+    y_limits_entropy_shared =y_limits_entropy_flux
+
 
     # ========================================================================
     #  Depth and Momentum Plot
@@ -260,7 +268,7 @@ def setplot(plotdata,rho,dry_tolerance):
     plotitem.show = True
 
     # ========================================================================
-    #  h-values
+    #  h-valuesplot
     # ========================================================================
     plotfigure = plotdata.new_plotfigure(name='depths')
     plotfigure.show = False
@@ -351,7 +359,56 @@ def setplot(plotdata,rho,dry_tolerance):
     plotdata.latex_framesperline = 1         # layout of plots
     plotdata.latex_makepdf = False           # also run pdflatex?
 
+    # ========================================================================
+    #  h-values
+    # ========================================================================
+    plotfigure = plotdata.new_plotfigure(name = "Depths and dry tolerance")
+    plotfigure.show = True
 
+    def depths_same_plot(cd,xlimits):
+        fig = mpl.gcf()
+        fig.clf()
+
+        # Get x coordinate values
+        x = cd.patch.dimensions[0].centers
+
+        # Create axes for each plot, sharing x axis
+        ax1 = fig.add_subplot(111)
+
+        # Bottom layer
+        ax1.fill_between(x,bathy(cd),eta_1(cd),color=plot.bottom_color)
+        # Top Layer
+        ax1.fill_between(x,eta_1(cd),eta_2(cd),color=plot.top_color)
+        # Plot bathy
+        ax1.plot(x,bathy(cd),'k',linestyle=plot.bathy_linestyle)
+        # Plot internal layer
+        ax1.plot(x,eta_2(cd),'k',linestyle=plot.internal_linestyle)
+        # Plot surface
+        ax1.plot(x,eta_1(cd),'k',linestyle=plot.surface_linestyle)
+        # Plot dry tolerance
+        ax1.plot(x,dry_tolerance_(cd),'k',linestyle=':', color = 'red')
+
+        # Remove ticks from top plot
+        locs,labels = mpl.xticks()
+        labels = ['' for i in xrange(len(locs))]
+        mpl.xticks(locs,labels)
+
+        # ax1.set_title('')
+        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_xlim(xlimits)
+        ax1.set_ylim(ylimits_depth)
+        # ax1.set_xlabel('x')
+        ax1.set_ylabel('Depth (m)')
+
+
+        # # This does not work on all versions of matplotlib
+        # try:
+        #     mpl.subplots_adjust(hspace=0.1)
+        # except:
+        #     pass
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.afteraxes = lambda cd:depths_same_plot(cd,xlimits)
 
     # ====================================================
     # Plot Entropy
@@ -363,7 +420,7 @@ def setplot(plotdata,rho,dry_tolerance):
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.title = "Entropy"
     plotaxes.xlimits = xlimits
-    plotaxes.ylimits = 'auto'
+    plotaxes.ylimits = y_limits_entropy_shared
 
     # Entropy
     plotitem = plotaxes.new_plotitem(plot_type='1d')
@@ -398,7 +455,7 @@ def setplot(plotdata,rho,dry_tolerance):
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.title = "Entropy flux"
     plotaxes.xlimits = xlimits
-    plotaxes.ylimits = 'auto'
+    plotaxes.ylimits = y_limits_entropy_flux
 
     # Entropy
     plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
@@ -432,7 +489,7 @@ def setplot(plotdata,rho,dry_tolerance):
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.title = "Entropy Condition"
     plotaxes.xlimits = xlimits
-    plotaxes.ylimits = 'auto'
+    plotaxes.ylimits = y_limits_entropy_condition
 
     # Entropy
     plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
