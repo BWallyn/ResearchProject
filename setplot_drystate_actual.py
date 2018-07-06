@@ -107,43 +107,36 @@ def setplot(plotdata,rho,dry_tolerance):
         return u_2
 
 
-    # def entropy_at_x(q, index):
-    #     h_1i=q[0,index] / rho[0]
-    #     h_2i=q[2,index] / rho[1]
-    #     u_1i=q[1,index] / q[0,index]
-    #     u_2i=q[3,index] / q[2,index]
-    #     entropy_at_x = rho[0]*1/2*(h_1i*(u_1i)**2+g*(h_1i)**2) + rho[1]*1/2*(h_2i*(u_2i)**2+g*(h_2i)**2) + rho[0]*g*h_1i*h_2i + g*b[index]*(rho[0]*h_1i+rho[1]*h_2i)
-    #     return entropy_at_x
+    def entropy_at_x(q, index):
+        h_1i=q[0,index] / rho[0]
+        h_2i=q[2,index] / rho[1]
+        u_1i=q[1,index] / q[0,index]
+        u_2i=q[3,index] / q[2,index]
+        entropy_at_x = rho[0]*1/2*(h_1i*(u_1i)**2+g*(h_1i)**2) + rho[1]*1/2*(h_2i*(u_2i)**2+g*(h_2i)**2) + rho[0]*g*h_1i*h_2i + g*b[index]*(rho[0]*h_1i+rho[1]*h_2i)
+        return entropy_at_x
 
     def entropy(cd):
         index = np.nonzero(np.all([h_1(cd) > dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
         entropy = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
-        h_1i=cd.q[0,index] / rho[0]
-        h_2i=cd.q[2,index] / rho[1]
-        u_1i=cd.q[1,index] / cd.q[0,index]
-        u_2i=cd.q[3,index] / cd.q[2,index]
-        entropy[index] = rho[0]*1/2*(h_1i*(u_1i)**2+g*(h_1i)**2) + rho[1]*1/2*(h_2i*(u_2i)**2+g*(h_2i)**2) + rho[0]*g*h_1i*h_2i + g*b[index]*(rho[0]*h_1i+rho[1]*h_2i)
+        entropy[index] = entropy_at_x(cd.q, index)
         return entropy
 
-    # def entropy_flux_at_x(q, index):
-    #     h_1i=q[0,index] / rho[0]
-    #     h_2i=q[2,index] / rho[1]
-    #     u_1i=q[1,index] / q[0,index]
-    #     u_2i=q[3,index] / q[2,index]
-    #     entropy_flux_at_x = rho[0]*(h_1i*(u_1i**2)/2+g*(h_1i**2))*u_1i + rho[1]*(h_2i*(u_2i**2)/2+g*(h_2i**2))*u_2i + rho[0]*g*h_1i*h_2i*(u_1i+u_2i) + g*b[index]*(rho[0]*h_1i*u_1i
-    #      + rho[1]*h_2i*u_2i)
-    #     #print(entropy_flux_at_x)
-    #     return entropy_flux_at_x
+    def entropy_flux_at_x(q, index):
+        h_1i=q[0,index] / rho[0]
+        h_2i=q[2,index] / rho[1]
+        u_1i=q[1,index] / q[0,index]
+        u_2i=q[3,index] / q[2,index]
+        print(u_2i)
+        entropy_flux_at_x = rho[0]*(h_1i*(u_1i**2)/2+g*(h_1i**2))*u_1i + rho[1]*(h_2i*(u_2i**2)/2+g*(h_2i**2))*u_2i + rho[0]*g*h_1i*h_2i*(u_1i+u_2i) + g*b[index]*(rho[0]*h_1i*u_1i
+         + rho[1]*h_2i*u_2i)
+        #print(entropy_flux_at_x)
+        return entropy_flux_at_x
 
     def entropy_flux(cd):
         index = np.nonzero(np.all([h_1(cd)>dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
         entropy_flux = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
-        h_1i=cd.q[0,index] / rho[0]
-        h_2i=cd.q[2,index] / rho[1]
-        u_1i=cd.q[1,index] / cd.q[0,index]
-        u_2i=cd.q[3,index] / cd.q[2,index]
-        entropy_flux[index] = rho[0]*(h_1i*(u_1i**2)/2+g*(h_1i**2))*u_1i + rho[1]*(h_2i*(u_2i**2)/2+g*(h_2i**2))*u_2i + rho[0]*g*h_1i*h_2i*(u_1i+u_2i) + g*b[index]*(rho[0]*h_1i*u_1i
-         + rho[1]*h_2i*u_2i)
+        entropy_flux[index] = entropy_flux_at_x(cd.q,index)
+
         return entropy_flux
 
 
@@ -152,27 +145,27 @@ def setplot(plotdata,rho,dry_tolerance):
         index_t = int(cd.frameno)
         if index_t>0 :
             #entropy at t=0 doesn't exist
-            (x,) = np.nonzero(np.all([h_1(cd)>dry_tolerance, h_2(cd)>dry_tolerance],axis=0))
-            len_x = len(x)
             delta_t = Solution(index_t, path=plotdata.outdir,read_aux=True).t - Solution(index_t-1, path=plotdata.outdir,read_aux=True).t
             delta_x = cd.dx
             entropy_cond = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
-            for index_x in range(len_x-1):
-                index_x_next = index_x + 1
-                entropy_flux_actual = entropy_flux(cd)[index_x]
-                entropy_flux_prev = entropy_flux(cd)[index_x_next]
-                entropy_next=entropy(cd)[index_x]
-                entropy_actual=entropy(Solution(index_t-1, path=plotdata.outdir,read_aux=True))[index_x]
-
-                entropy_cond[index_x]= entropy_next-entropy_actual + (delta_t/delta_x)*(entropy_flux_actual-entropy_flux_prev)
-                # if index_t == 67 or index_t==68 or index_t==69 or index_t==70 :
-                #     print('=======================================')
-                #     print(entropy_flux_actual)
-                #     print(entropy_flux_prev)
-                #     print(delta_t/delta_x)
-                #     print(entropy)
-                #     print(entropy_prev)
-                #     print(entropy_cond)
+            index_x = np.nonzero(np.all([h_1(cd)>dry_tolerance, h_2(cd)>dry_tolerance],axis=0))
+            index_x_array = index_x[0]
+            index_x_next=(deepcopy(index_x_array[1:]),)
+            index_x_array = index_x_array[:len(index_x_array)-1]
+            index_x=(index_x_array,)
+            entropy_flux_actual = entropy_flux_at_x(cd.q, index_x)
+            entropy=entropy_at_x(cd.q,index_x)
+            entropy_prev=entropy_at_x(Solution(index_t-1, path=plotdata.outdir,read_aux=True).q,index_x)
+            entropy_flux_prev = entropy_flux_at_x(cd.q, index_x_next)
+            entropy_cond[index_x]= entropy-entropy_prev + (delta_t/delta_x)*(entropy_flux_actual-entropy_flux_prev)
+            # if index_t == 67 or index_t==68 or index_t==69 or index_t==70 :
+            #     print('=======================================')
+            #     print(entropy_flux_actual)
+            #     print(entropy_flux_prev)
+            #     print(delta_t/delta_x)
+            #     print(entropy)
+            #     print(entropy_prev)
+            #     print(entropy_cond)
             return entropy_cond
         else :
             return([0]*500)

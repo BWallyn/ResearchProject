@@ -92,28 +92,14 @@ def setplot(plotdata,rho,dry_tolerance):
         index = np.nonzero(h_1(cd) > dry_tolerance)
         u_1 = np.zeros(h_1(cd).shape)
         u_1[index] = cd.q[1,index] / cd.q[0,index]
-        index_max = np.where(u_1 > 0.5)
-        u_1[index_max] = 0.5
         return u_1
 
     def u_2(cd):
         index = np.nonzero(h_2(cd) > dry_tolerance)
         u_2 = np.zeros(h_2(cd).shape)
         u_2[index] = cd.q[3,index] / cd.q[2,index]
-
-        #limit the velocity
-        index_max = np.where(u_2 > 0.5)
-        u_2[index_max] = 0.5
         return u_2
 
-
-    # def entropy_at_x(q, index):
-    #     h_1i=q[0,index] / rho[0]
-    #     h_2i=q[2,index] / rho[1]
-    #     u_1i=q[1,index] / q[0,index]
-    #     u_2i=q[3,index] / q[2,index]
-    #     entropy_at_x = rho[0]*1/2*(h_1i*(u_1i)**2+g*(h_1i)**2) + rho[1]*1/2*(h_2i*(u_2i)**2+g*(h_2i)**2) + rho[0]*g*h_1i*h_2i + g*b[index]*(rho[0]*h_1i+rho[1]*h_2i)
-    #     return entropy_at_x
 
     def entropy(cd):
         index = np.nonzero(np.all([h_1(cd) > dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
@@ -125,15 +111,6 @@ def setplot(plotdata,rho,dry_tolerance):
         entropy[index] = rho[0]*1/2*(h_1i*(u_1i)**2+g*(h_1i)**2) + rho[1]*1/2*(h_2i*(u_2i)**2+g*(h_2i)**2) + rho[0]*g*h_1i*h_2i + g*b[index]*(rho[0]*h_1i+rho[1]*h_2i)
         return entropy
 
-    # def entropy_flux_at_x(q, index):
-    #     h_1i=q[0,index] / rho[0]
-    #     h_2i=q[2,index] / rho[1]
-    #     u_1i=q[1,index] / q[0,index]
-    #     u_2i=q[3,index] / q[2,index]
-    #     entropy_flux_at_x = rho[0]*(h_1i*(u_1i**2)/2+g*(h_1i**2))*u_1i + rho[1]*(h_2i*(u_2i**2)/2+g*(h_2i**2))*u_2i + rho[0]*g*h_1i*h_2i*(u_1i+u_2i) + g*b[index]*(rho[0]*h_1i*u_1i
-    #      + rho[1]*h_2i*u_2i)
-    #     #print(entropy_flux_at_x)
-    #     return entropy_flux_at_x
 
     def entropy_flux(cd):
         index = np.nonzero(np.all([h_1(cd)>dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
@@ -165,14 +142,6 @@ def setplot(plotdata,rho,dry_tolerance):
                 entropy_actual=entropy(Solution(index_t-1, path=plotdata.outdir,read_aux=True))[index_x]
 
                 entropy_cond[index_x]= entropy_next-entropy_actual + (delta_t/delta_x)*(entropy_flux_actual-entropy_flux_prev)
-                # if index_t == 67 or index_t==68 or index_t==69 or index_t==70 :
-                #     print('=======================================')
-                #     print(entropy_flux_actual)
-                #     print(entropy_flux_prev)
-                #     print(delta_t/delta_x)
-                #     print(entropy)
-                #     print(entropy_prev)
-                #     print(entropy_cond)
             return entropy_cond
         else :
             return([0]*500)
