@@ -1,0 +1,7 @@
+Test 3
+
+In this test, the initial conditions are the same as in the dry_state.py file except :
+-q_left = [0.5 * state.problem_data['rho'][0], -8.0*0.5 * state.problem_data['rho'][0],
+            0.5 * state.problem_data['rho'][1], -8.0*0.5 * state.problem_data['rho'][1]]
+-q_right = [0.5 * state.problem_data['rho'][0], 8.0*0.5 * state.problem_data['rho'][0],
+            0.5 * state.problem_data['rho'][1], 8.0*0.5 * state.problem_data['rho'][1]]

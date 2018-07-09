@@ -1,0 +1,8 @@
+Test 4
+
+In this test, the initial conditions are the same as in the dry_state.py file except :
+-dry_tolerance = 50e-2
+-q_left = [0.8 * state.problem_data['rho'][0], -1.0*0.8 * state.problem_data['rho'][0],
+            0.8 * state.problem_data['rho'][1], -1.0*0.8 * state.problem_data['rho'][1]]
+-q_right = [0.8 * state.problem_data['rho'][0], 1.0*0.8 * state.problem_data['rho'][0],
+            0.8 * state.problem_data['rho'][1], 1.0*0.8 * state.problem_data['rho'][1]]
