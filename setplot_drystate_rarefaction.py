@@ -114,6 +114,33 @@ def setplot(plotdata,rho,dry_tolerance):
         Ri[index]=(u_1(cd)[index]-u_2(cd)[index])**2/(g* one_minus_r *(h_1(cd)[index]-h_2(cd)[index]))
         return(Ri)
 
+
+    def eigenspace_velocity(cd):
+        #Problem for left and right
+        total_depth_l = h_1(cd)+h_2(cd)
+        total_depth_r = h_1(cd)+h_2(cd)
+        mult_depth_l = h_1(cd)*h_2(cd)
+        mult_depth_r = h_1(cd)*h_2(cd)
+        s = np.zeros((4, len(h_1(cd))))
+        s[0,:]=(h_1(cd)[:]*u_1(cd)[:] + h_2(cd)[:]*u_2(cd)[:]) / total_depth_l - np.sqrt(g*total_depth_l)
+        s[1,:]=(h_2(cd)[:]*u_1(cd)[:] + h_1(cd)[:]*u_2(cd)[:] / total_depth_l) - np.sqrt(g*one_minus_r*mult_depth_l/total_depth_l * (1-(u_1(cd)[:]-u_2(cd)[:])**2/(g*one_minus_r*total_depth_l)))
+        s[2,:]=(h_2(cd)[:]*u_1(cd)[:] + h_1(cd)[:]*u_2(cd)[:] / total_depth_l) + np.sqrt(g*one_minus_r*mult_depth_l/total_depth_l * (1-(u_1(cd)[:]-u_2(cd)[:])**2/(g*one_minus_r*total_depth_l)))
+        s[3,:]=(h_1(cd)[:]*u_1(cd)[:] + h_2(cd)[:]*u_2(cd)[:]) / total_depth_l - np.sqrt(g*total_depth_l)
+
+        alpha=np.zeros((4,len(h_1(cd))))
+        alpha[0:1,:]=((s[0:1,:]-u_1(cd)[:])**2 - g*h_1(cd)[:])/(g*h_1(cd)[:])
+        alpha[2:3,:]=((s[2:3,:]-u_1(cd)[:])**2 - g*h_1(cd)[:])/(g*h_1(cd)[:])
+
+        eig_vec = np.zeros((4,4,len(h_1(cd))))
+        eig_vec[0,:,:] = 1.0
+        eig_vec[1,:,:] = s[:,:]
+        eig_vec[2,:,:] = alpha[:,:]
+        eig_vec[3,:,:] = s[:,:]*alpha[:,:]
+        return(eig_vec)
+
+
+
+
     def entropy(cd):
         index = np.nonzero(np.all([h_1(cd) > dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
         entropy = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
@@ -123,6 +150,7 @@ def setplot(plotdata,rho,dry_tolerance):
         u_2i=cd.q[3,index] / cd.q[2,index]
         entropy[index] = rho[0]*1/2*(h_1i*(u_1i)**2+g*(h_1i)**2) + rho[1]*1/2*(h_2i*(u_2i)**2+g*(h_2i)**2) + rho[0]*g*h_1i*h_2i + g*b[index]*(rho[0]*h_1i+rho[1]*h_2i)
         return entropy
+
 
 
     def entropy_flux(cd):
@@ -156,9 +184,8 @@ def setplot(plotdata,rho,dry_tolerance):
 
                 entropy_cond[index_x]= entropy_next-entropy_actual + (delta_t/delta_x)*(entropy_flux_actual-entropy_flux_prev)
 
-            #print(Solution(cd.frameno,path=plotdata.outdir,read_aux=True).aux)
-            #print(Solution(cd.frameno,path=plotdata.outdir,read_aux=True).aux[2,:])
-            #print Richardson_number(cd)
+
+            #print(eigenspace_velocity(cd))
 
             return entropy_cond
         else :
@@ -206,6 +233,7 @@ def setplot(plotdata,rho,dry_tolerance):
     y_limits_entropy_shared =y_limits_entropy_flux
     y_limits_richardson = [-0.01,5.0]
     y_limits_Froude=[-1.0,3.0]
+    y_limits_eigenspace=[-5.0,1.0]
 
 
 
@@ -560,7 +588,7 @@ def setplot(plotdata,rho,dry_tolerance):
     #  Froude number
     # ========================================================================
     plotfigure = plotdata.new_plotfigure(name = "Froude number")
-    plotfigure.show = True
+    plotfigure.show = False
 
     def froude_same_plot(cd,xlimits):
         fig = mpl.gcf()
@@ -615,6 +643,85 @@ def setplot(plotdata,rho,dry_tolerance):
 
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.afteraxes = lambda cd:froude_same_plot(cd,xlimits)
+
+    # ========================================================================
+    #  Froude number
+    # ========================================================================
+    plotfigure = plotdata.new_plotfigure(name = "eigenspace")
+    plotfigure.show = True
+
+    def eigenspace_same_plot(cd,xlimits):
+        fig = mpl.gcf()
+        fig.clf()
+
+        # Get x coordinate values
+        x = cd.patch.dimensions[0].centers
+
+        # Create axes for each plot, sharing x axis
+        ax1 = fig.add_subplot(221)
+        ax2 = fig.add_subplot(223,sharex=ax1)
+        ax3 = fig.add_subplot(222)
+        ax4 = fig.add_subplot(224,sharex=ax3)
+
+        # Eigenspace 1
+        ax1.plot(x,eigenspace_velocity(cd)[0,0,:],'k',color = 'blue')
+        ax1.plot(x,eigenspace_velocity(cd)[0,1,:],'k',color = 'red')
+        ax1.plot(x,eigenspace_velocity(cd)[0,2,:],'k',color = 'green')
+        ax1.plot(x,eigenspace_velocity(cd)[0,3,:],'k',color = 'grey')
+
+        #Eigenspace 2
+        ax2.plot(x,eigenspace_velocity(cd)[1,0,:],'k',color = 'blue')
+        ax2.plot(x,eigenspace_velocity(cd)[1,1,:],'k',color = 'red')
+        ax2.plot(x,eigenspace_velocity(cd)[1,2,:],'k',color = 'green')
+        ax2.plot(x,eigenspace_velocity(cd)[1,3,:],'k',color = 'grey')
+
+        #Eigenspace 3
+        ax3.plot(x,eigenspace_velocity(cd)[2,0,:],'k',color = 'blue')
+        ax3.plot(x,eigenspace_velocity(cd)[2,1,:],'k',color = 'red')
+        ax3.plot(x,eigenspace_velocity(cd)[2,2,:],'k',color = 'green')
+        ax3.plot(x,eigenspace_velocity(cd)[2,3,:],'k',color = 'grey')
+
+        #Eigenspace 4
+        ax4.plot(x,eigenspace_velocity(cd)[3,0,:],'k',color = 'blue')
+        ax4.plot(x,eigenspace_velocity(cd)[3,1,:],'k',color = 'red')
+        ax4.plot(x,eigenspace_velocity(cd)[3,2,:],'k',color = 'green')
+        ax4.plot(x,eigenspace_velocity(cd)[3,3,:],'k',color = 'grey')
+
+        # Remove ticks from top plot
+        locs,labels = mpl.xticks()
+        labels = ['' for i in xrange(len(locs))]
+        mpl.xticks(locs,labels)
+
+        # ax1.set_title('')
+        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_xlim(xlimits)
+        ax1.set_ylim(y_limits_eigenspace)
+        # ax1.set_xlabel('x')
+        ax1.set_ylabel('Eigenspace 1')
+
+
+        # froude_number_2
+        #ax2.plot(x,froude_number_2(cd),'k',color='green')
+
+
+
+        # Add legend
+        ax2.legend(loc=4)
+        ax2.set_title('')
+        # ax1.set_title('Layer Velocities')
+        ax2.set_ylabel('Eigenspace 2')
+        ax2.set_xlabel('x (m)')
+        ax2.set_xlim(xlimits)
+        ax2.set_ylim(y_limits_eigenspace)
+
+        # This does not work on all versions of matplotlib
+        try:
+            mpl.subplots_adjust(hspace=0.1)
+        except:
+            pass
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.afteraxes = lambda cd:eigenspace_same_plot(cd,xlimits)
 
 
 	# Parameters used only when creating html and/or latex hardcopy
