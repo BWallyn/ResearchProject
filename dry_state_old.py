@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-r""" Run the suite of tests for the 1d two-layer equations with rarefaction"""
+r""" Run the suite of tests for the 1d two-layer equations"""
 
 from clawpack.riemann import layered_shallow_water_1D
 import clawpack.clawutil.runclaw as runclaw
 import clawpack.pyclaw.plot as plot
 
 import multilayer as ml
-
+        
 def dry_state(num_cells,eigen_method,entropy_fix,**kargs):
     r"""Run and plot a multi-layer dry state problem"""
-
+    
     # Construct output and plot directory paths
-    name = 'multilayer/dry_state_rarefaction'
+    name = 'multilayer/dry_state'
     prefix = 'ml_e%s_m%s_fix' % (eigen_method, num_cells)
-
+    
     if entropy_fix:
         prefix = "".join((prefix, "T"))
     else:
         prefix = "".join((prefix, "F"))
     outdir,plotdir,log_path = runclaw.create_output_paths(name, prefix, **kargs)
-
+    
     # Redirect loggers
     # This is not working for all cases, see comments in runclaw.py
     for logger_name in ['pyclaw.io', 'pyclaw.solution', 'plot', 'pyclaw.solver',
@@ -34,7 +34,7 @@ def dry_state(num_cells,eigen_method,entropy_fix,**kargs):
     else:
         import clawpack.pyclaw as pyclaw
 
-
+    
     # =================
     # = Create Solver =
     # =================
@@ -42,7 +42,7 @@ def dry_state(num_cells,eigen_method,entropy_fix,**kargs):
         solver = pyclaw.ClawSolver1D(riemann_solver=layered_shallow_water_1D)
     else:
         raise NotImplementedError('Classic is currently the only supported solver.')
-
+        
     # Solver method parameters
     solver.cfl_desired = 0.9
     solver.cfl_max = 1.0
@@ -51,7 +51,7 @@ def dry_state(num_cells,eigen_method,entropy_fix,**kargs):
     solver.kernel_language = 'Fortran'
     solver.limiters = 3
     solver.source_split = 1
-
+        
     # Boundary conditions
     solver.bc_lower[0] = 1
     solver.bc_upper[0] = 1
@@ -61,15 +61,15 @@ def dry_state(num_cells,eigen_method,entropy_fix,**kargs):
     # Set the before step function
     solver.before_step = lambda solver, solution:ml.step.before_step(
                                                                solver, solution)
-
+                                            
     # Use simple friction source term
     solver.step_source = ml.step.friction_source
-
+    
     # ============================
     # = Create Initial Condition =
     # ============================
     num_layers = 2
-
+    
     x = pyclaw.Dimension(0.0, 1.0, num_cells)
     domain = pyclaw.Domain([x])
     state = pyclaw.State(domain, 2 * num_layers, 3 + num_layers)
@@ -84,36 +84,36 @@ def dry_state(num_cells,eigen_method,entropy_fix,**kargs):
                      state.problem_data['rho'][0] / state.problem_data['rho'][1]
     state.problem_data['one_minus_r'] = 1.0 - state.problem_data['r']
     state.problem_data['num_layers'] = num_layers
-
+    
     # Set method parameters, this ensures it gets to the Fortran routines
     state.problem_data['eigen_method'] = eigen_method
     state.problem_data['dry_tolerance'] = 1e-3
     state.problem_data['inundation_method'] = 2
     state.problem_data['entropy_fix'] = entropy_fix
-
+    
     solution = pyclaw.Solution(state, domain)
     solution.t = 0.0
-
+    
     # Set aux arrays including bathymetry, wind field and linearized depths
     ml.aux.set_jump_bathymetry(solution.state, 0.5, [-1.0, -1.0])
     ml.aux.set_no_wind(solution.state)
     ml.aux.set_h_hat(solution.state, 0.5, [0.0,-0.5], [0.0,-1.0])
-
+    
     # Set sea at rest initial condition
-    q_left = [0.5 * state.problem_data['rho'][0], -1.0*0.5 * state.problem_data['rho'][0],
-              0.5 * state.problem_data['rho'][1], -1.0*0.5 * state.problem_data['rho'][1]]
-    q_right = [0.5 * state.problem_data['rho'][0], 1.0*0.5 * state.problem_data['rho'][0],
-               0.5 * state.problem_data['rho'][1], 1.0*0.5 * state.problem_data['rho'][1]]
+    q_left = [0.5 * state.problem_data['rho'][0], 0.0,
+              0.5 * state.problem_data['rho'][1], 0.0]
+    q_right = [1.0 * state.problem_data['rho'][0], 0.0,
+               0.0, 0.0]
     ml.qinit.set_riemann_init_condition(solution.state, 0.5, q_left, q_right)
-
-
+    
+    
     # ================================
     # = Create simulation controller =
     # ================================
     controller = pyclaw.Controller()
     controller.solution = solution
     controller.solver = solver
-
+    
     # Output parameters
     controller.output_style = 3
     controller.nstepout = 1
@@ -121,21 +121,21 @@ def dry_state(num_cells,eigen_method,entropy_fix,**kargs):
     controller.write_aux_init = True
     controller.outdir = outdir
     controller.write_aux = True
-
-
+    
+    
     # ==================
     # = Run Simulation =
     # ==================
     state = controller.run()
-
-
+    
+    
     # ============
     # = Plotting =
     # ============
     plot_kargs = {'rho':solution.state.problem_data['rho'],
                   'dry_tolerance':solution.state.problem_data['dry_tolerance']}
-    plot.plot(setplot="./setplot_drystate_rarefaction.py", outdir=outdir,
-              plotdir=plotdir, htmlplot=kargs.get('htmlplot',False),
+    plot.plot(setplot="./setplot_drystate.py", outdir=outdir, 
+              plotdir=plotdir, htmlplot=kargs.get('htmlplot',False), 
               iplot=kargs.get('iplot',False),
               file_format=controller.output_format,
               **plot_kargs)

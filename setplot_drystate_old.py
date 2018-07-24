@@ -39,7 +39,6 @@ import multilayer.plot as plot
 
 # matplotlib.rcParams['figure.figsize'] = [6.0,10.0]
 
-
 #--------------------------
 def setplot(plotdata,rho,dry_tolerance):
 #--------------------------
@@ -61,9 +60,6 @@ def setplot(plotdata,rho,dry_tolerance):
         
     # Load bathymetery
     b = Solution(0, path=plotdata.outdir,read_aux=True).state.aux[bathy_index,:]
-
-	# Load gravitation
-    g = Solution(0, path=plotdata.outdir,read_aux=True).state.problem_data['g']
 
     def bathy(cd):
         return b
@@ -97,35 +93,6 @@ def setplot(plotdata,rho,dry_tolerance):
         u_2 = np.zeros(h_2(cd).shape)
         u_2[index] = cd.q[3,index] / cd.q[2,index]
         return u_2
-
-	def u_3(cd):
-		index = np.nonzero(h_2(cd) > dry_tolerance)
-		u_3 = np.zeros(h_2(cd).shape)
-		u_3[index] = cd.q[3,index] / cd.q[2,index]
-		return u_3
-
-	def entropy(cd):
-		index = np.nonzero(h_1(cd) > dry_tolerance)
-		h_1i=cd.q[0,index] / rho[0]
-		h_2i=cd.q[2,index] / rho[1]
-		u_1i=cd.q[1,index] / cd.q[0,index]
-		u_2i=cd.q[3,index] / cd.q[2,index]
-		ent = np.zeros(h_1(cd).shape)
-		ent[index] = rho[0]*1/2*(h_1i*(u_1i)**2+g*(h_1i)**2) + rho[1]*1/2*(h_2i*(u_2i)**2+g*(h_2i)**2) + rho[0]*g*h_1i*h_2i
-		entropy = np.zeros(h_1(cd).shape)
-		entropy[index] = ent[index] + g*bathy(cd)*(rho[0]*h_1i+rho[1]*h_2i)
-		return entropy
-
-	def entropy_flux(cd):
-		#find a way to get the value from dry_state.py
-		#g=9.81
-
-		index = np.nonzero(h_1(cd) > dry_tolerance)
-		ent_flux = np.zeros(h_1(cd).shape)
-		ent_flux[index] = rho[0]*(h_1(cd)[index]*u_1(cd)[index]**2/2+g*h_1(cd)[index]**2)*u_1(cd)[index] + rho[1]*(h_2(cd)[index]*u_2(cd)[index]**2/2+g*h_2(cd)[index]**2)*u_2(cd)[index] + rho[0]*g*h_1(cd)[index]*h_2(cd)[index]*(u_1(cd)[index]+u_2(cd)[index])
-		entropy_flux = np.zeros(h_1(cd).shape)
-		entropy_flux[index] = ent[index] + g*bathy(cd)*(rho[0]*h_1(cd)[index]*u_1(cd)[index]+rho[1]*h_2(cd)[index]*u_2(cd)[index])
-		return entropy_flux
 
     plotdata.clearfigures()  # clear any old figures,axes,items data
     
@@ -182,7 +149,6 @@ def setplot(plotdata,rho,dry_tolerance):
         bottom_layer = ax2.plot(x,u_2(cd),'k',linestyle=plot.internal_linestyle,label="Bottom Layer Velocity")
         # Top Layer velocity
         top_layer = ax2.plot(x,u_1(cd),'b',linestyle=plot.surface_linestyle,label="Top Layer velocity")
-		
 
         # Add legend
         ax2.legend(loc=4)
@@ -294,7 +260,7 @@ def setplot(plotdata,rho,dry_tolerance):
     plotfigure.show = False
     
     plotaxes = plotfigure.new_plotaxes()
-    #plotaxes.axescmd = 'subplot(1,2,1)'
+    plotaxes.axescmd = 'subplot(1,2,1)'
     plotaxes.title = "Layer Velocities"
     plotaxes.xlimits = 'auto'
     plotaxes.ylimits = 'auto'
@@ -325,39 +291,6 @@ def setplot(plotdata,rho,dry_tolerance):
     plotdata.latex_framesperline = 1         # layout of plots
     plotdata.latex_makepdf = False           # also run pdflatex?
 
-
-
-    # ====================================================
-    # Plot Entropy
-    # ====================================================
-	
-    plotfigure = plotdata.new_plotfigure(name="entropy")
-    plotfigure.show = True
-	
-    plotaxes = plotfigure.new_plotaxes()
-    #plotaxes.axescmd = 'subplot(1,1,1)'
-    plotaxes.title = "Entropy"
-    plotaxes.xlimits = 'auto'
-    plotaxes.ylimits = 'auto'
-    
-    # Top layer
-    plotitem = plotaxes.new_plotitem(plot_type='1d')
-    plotitem.plot_var = u_3
-    plotitem.color = 'b'
-    plotitem.show = True
-    
-	# Parameters used only when creating html and/or latex hardcopy
-    # e.g., via pyclaw.plotters.frametools.printframes:
-
-    plotdata.printfigs = True                # print figures
-    plotdata.print_format = 'png'            # file format
-    plotdata.print_framenos = 'all'          # list of frames to print
-    plotdata.print_fignos = 'all'            # list of figures to print
-    plotdata.html = True                     # create html files of plots?
-    plotdata.html_homelink = '../README.html'   # pointer for top of index
-    plotdata.latex = True                    # create latex file of plots?
-    plotdata.latex_figsperline = 2           # layout of plots
-    plotdata.latex_framesperline = 1         # layout of plots
-    plotdata.latex_makepdf = False           # also run pdflatex?
-
     return plotdata
+
+    

@@ -67,6 +67,10 @@ def setplot(plotdata,rho,dry_tolerance):
 	# Load gravitation
     g = Solution(0, path=plotdata.outdir,read_aux=True).state.problem_data['g']
 
+    # Load one minus r
+    one_minus_r=Solution(0, path=plotdata.outdir,read_aux=True).state.problem_data['one_minus_r']
+
+
     def bathy(cd):
         return b
 
@@ -100,6 +104,15 @@ def setplot(plotdata,rho,dry_tolerance):
         u_2[index] = cd.q[3,index] / cd.q[2,index]
         return u_2
 
+    def froude_number(u,h):
+        Fr=abs(u)/((g*h)**(1/2))
+        return Fr
+
+    def Richardson_number(cd):
+        index=np.nonzero(abs(h_1(cd)-h_2(cd)>0))
+        Ri=np.zeros(h_1(cd).shape)
+        Ri[index]=(u_1(cd)[index]-u_2(cd)[index])**2/(g* one_minus_r *(h_1(cd)[index]-h_2(cd)[index]))
+        return(Ri)
 
     def entropy(cd):
         index = np.nonzero(np.all([h_1(cd) > dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
@@ -142,12 +155,38 @@ def setplot(plotdata,rho,dry_tolerance):
                 entropy_actual=entropy(Solution(index_t-1, path=plotdata.outdir,read_aux=True))[index_x]
 
                 entropy_cond[index_x]= entropy_next-entropy_actual + (delta_t/delta_x)*(entropy_flux_actual-entropy_flux_prev)
+
+            #print(Solution(cd.frameno,path=plotdata.outdir,read_aux=True).aux)
+            #print(Solution(cd.frameno,path=plotdata.outdir,read_aux=True).aux[2,:])
+            #print Richardson_number(cd)
+
             return entropy_cond
         else :
             return([0]*500)
 
+    def froude_number_1(cd):
+        index=np.nonzero(h_1(cd) > dry_tolerance)
+        Fr=np.zeros(h_1(cd).shape)
+        Fr[index] = froude_number(u_1(cd)[index],h_1(cd)[index])
+        #print(Fr)
+        return(Fr)
+
+    def froude_number_2(cd):
+        index=np.nonzero(h_2(cd) > dry_tolerance)
+        Fr=np.zeros(h_2(cd).shape)
+        Fr[index] = froude_number(u_2(cd)[index],h_2(cd)[index])
+        #print(Fr)
+        return(Fr)
+
     def dry_tolerance_(cd):
         return ([dry_tolerance]*(len(cd.q[1])) )
+
+    def limit_entropy_condition(cd):
+        return ([0]*(len(cd.q[1])))
+
+    def flow_type(cd):
+        return ([1]*len(cd.q[1]))
+
 
     plotdata.clearfigures()  # clear any old figures,axes,items data
 
@@ -155,14 +194,19 @@ def setplot(plotdata,rho,dry_tolerance):
     xlimits = [0.0,1.0]
     xlimits_zoomed = [0.45,0.55]
     ylimits_momentum = [-0.004,0.004]
-    ylimits_depth = [-1.0,0.2]
+    ylimits_depth = [-1.0,0.5]
     ylimits_depth_zoomed = ylimits_depth
     ylimits_velocities = [-0.75,0.75]
     ylimits_velocities_zoomed = ylimits_velocities
+
+    y_limits_depth_only=[0.,5.0]
     y_limits_entropy = [-5.0 , 0.5]
     y_limits_entropy_flux = [-0.023 , 0.003 ]
     y_limits_entropy_condition = y_limits_entropy_flux
     y_limits_entropy_shared =y_limits_entropy_flux
+    y_limits_richardson = [-0.01,5.0]
+    y_limits_Froude=[-1.0,3.0]
+
 
 
     # ========================================================================
@@ -378,6 +422,10 @@ def setplot(plotdata,rho,dry_tolerance):
         ax1.plot(x,eta_2(cd),'k',linestyle=plot.internal_linestyle)
         # Plot surface
         ax1.plot(x,eta_1(cd),'k',linestyle=plot.surface_linestyle)
+        #plot depth 1
+        #ax1.plot(x,h_1(cd),'k',color='green')
+        #plot_depth 2
+        #ax1.plot(x,h_2(cd),'k',color='orange')
         # Plot dry tolerance
         ax1.plot(x,dry_tolerance_(cd),'k',linestyle=':', color = 'red')
 
@@ -448,7 +496,7 @@ def setplot(plotdata,rho,dry_tolerance):
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.title = "Entropy flux"
     plotaxes.xlimits = xlimits
-    plotaxes.ylimits = y_limits_entropy_flux
+    plotaxes.ylimits = 'auto'
 
     # Entropy
     plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
@@ -482,7 +530,7 @@ def setplot(plotdata,rho,dry_tolerance):
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.title = "Entropy Condition"
     plotaxes.xlimits = xlimits
-    plotaxes.ylimits = y_limits_entropy_condition
+    plotaxes.ylimits = 'auto'
 
     # Entropy
     plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
@@ -490,6 +538,83 @@ def setplot(plotdata,rho,dry_tolerance):
     plotitem.color = 'b'
     plotitem.show = True
 
+    # ====================================================
+    # Plot Richardson Number
+    # ====================================================
+
+    plotfigure = plotdata.new_plotfigure(name="kappa")
+    plotfigure.show = True
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.title = "Richardson number"
+    plotaxes.xlimits = xlimits
+    plotaxes.ylimits = y_limits_richardson
+
+    # Richardson
+    plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
+    plotitem.plot_var = Richardson_number
+    plotitem.color = 'b'
+    plotitem.show = True
+
+    # ========================================================================
+    #  Froude number
+    # ========================================================================
+    plotfigure = plotdata.new_plotfigure(name = "Froude number")
+    plotfigure.show = True
+
+    def froude_same_plot(cd,xlimits):
+        fig = mpl.gcf()
+        fig.clf()
+
+        # Get x coordinate values
+        x = cd.patch.dimensions[0].centers
+
+        # Create axes for each plot, sharing x axis
+        ax1 = fig.add_subplot(211)
+        ax2 = fig.add_subplot(212,sharex=ax1)
+
+        # Froude number 1
+        ax1.plot(x,froude_number_1(cd),'k',color = 'blue')
+        # Plot limit flow type
+        ax1.plot(x,flow_type(cd),'k',linestyle=':', color = 'red')
+
+
+        # Remove ticks from top plot
+        locs,labels = mpl.xticks()
+        labels = ['' for i in xrange(len(locs))]
+        mpl.xticks(locs,labels)
+
+        # ax1.set_title('')
+        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_xlim(xlimits)
+        ax1.set_ylim(y_limits_Froude)
+        # ax1.set_xlabel('x')
+        ax1.set_ylabel('Froude number 1')
+
+
+        # froude_number_2
+        ax2.plot(x,froude_number_2(cd),'k',color='green')
+        # Plot limit flow type
+        ax2.plot(x,flow_type(cd),'k',linestyle=':', color = 'red')
+
+
+        # Add legend
+        ax2.legend(loc=4)
+        ax2.set_title('')
+        # ax1.set_title('Layer Velocities')
+        ax2.set_ylabel('Froude number 2')
+        ax2.set_xlabel('x (m)')
+        ax2.set_xlim(xlimits)
+        ax2.set_ylim(y_limits_Froude)
+
+        # This does not work on all versions of matplotlib
+        try:
+            mpl.subplots_adjust(hspace=0.1)
+        except:
+            pass
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.afteraxes = lambda cd:froude_same_plot(cd,xlimits)
 
 
 	# Parameters used only when creating html and/or latex hardcopy
