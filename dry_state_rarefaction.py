@@ -100,10 +100,10 @@ def dry_state(num_cells,eigen_method,entropy_fix,**kargs):
     ml.aux.set_h_hat(solution.state, 0.5, [0.0,-0.5], [0.0,-1.0])
 
     # Set sea at rest initial condition
-    q_left = [0.5 * state.problem_data['rho'][0], -1.0*0.5 * state.problem_data['rho'][0],
-              0.5 * state.problem_data['rho'][1], -1.0*0.5 * state.problem_data['rho'][1]]
-    q_right = [0.5 * state.problem_data['rho'][0], 1.0*0.5 * state.problem_data['rho'][0],
-               0.5 * state.problem_data['rho'][1], 1.0*0.5 * state.problem_data['rho'][1]]
+    q_left = [0.5 * state.problem_data['rho'][0], -2.0*0.5 * state.problem_data['rho'][0],
+              0.5 * state.problem_data['rho'][1], -2.0*0.5 * state.problem_data['rho'][1]]
+    q_right = [0.5 * state.problem_data['rho'][0], 2.0*0.5 * state.problem_data['rho'][0],
+               0.5 * state.problem_data['rho'][1], 2.0*0.5 * state.problem_data['rho'][1]]
     ml.qinit.set_riemann_init_condition(solution.state, 0.5, q_left, q_right)
 
 

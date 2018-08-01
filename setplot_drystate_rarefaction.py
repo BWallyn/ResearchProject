@@ -109,9 +109,9 @@ def setplot(plotdata,rho,dry_tolerance):
         return Fr
 
     def Richardson_number(cd):
-        index=np.nonzero(abs(h_1(cd)-h_2(cd)>0))
+        index=np.nonzero(h_1(cd)+h_2(cd)>0)
         Ri=np.zeros(h_1(cd).shape)
-        Ri[index]=(u_1(cd)[index]-u_2(cd)[index])**2/(g* one_minus_r *(h_1(cd)[index]-h_2(cd)[index]))
+        Ri[index]=(u_1(cd)[index]-u_2(cd)[index])**2/(g* one_minus_r *(h_1(cd)[index]+h_2(cd)[index]))
         return(Ri)
 
 
@@ -123,9 +123,11 @@ def setplot(plotdata,rho,dry_tolerance):
         mult_depth_r = h_1(cd)*h_2(cd)
         s = np.zeros((4, len(h_1(cd))))
         s[0,:]=(h_1(cd)[:]*u_1(cd)[:] + h_2(cd)[:]*u_2(cd)[:]) / total_depth_l - np.sqrt(g*total_depth_l)
-        s[1,:]=(h_2(cd)[:]*u_1(cd)[:] + h_1(cd)[:]*u_2(cd)[:] / total_depth_l) - np.sqrt(g*one_minus_r*mult_depth_l/total_depth_l * (1-(u_1(cd)[:]-u_2(cd)[:])**2/(g*one_minus_r*total_depth_l)))
-        s[2,:]=(h_2(cd)[:]*u_1(cd)[:] + h_1(cd)[:]*u_2(cd)[:] / total_depth_l) + np.sqrt(g*one_minus_r*mult_depth_l/total_depth_l * (1-(u_1(cd)[:]-u_2(cd)[:])**2/(g*one_minus_r*total_depth_l)))
+        s[1,:]=(h_2(cd)[:]*u_1(cd)[:] + h_1(cd)[:]*u_2(cd)[:]) / total_depth_l - np.sqrt(g*one_minus_r*mult_depth_l/total_depth_l * (1-(u_1(cd)[:]-u_2(cd)[:])**2/(g*one_minus_r*total_depth_l)))
+        s[2,:]=(h_2(cd)[:]*u_1(cd)[:] + h_1(cd)[:]*u_2(cd)[:]) / total_depth_l + np.sqrt(g*one_minus_r*mult_depth_l/total_depth_l * (1-(u_1(cd)[:]-u_2(cd)[:])**2/(g*one_minus_r*total_depth_l)))
         s[3,:]=(h_1(cd)[:]*u_1(cd)[:] + h_2(cd)[:]*u_2(cd)[:]) / total_depth_l - np.sqrt(g*total_depth_l)
+        if isinstance(s[1,:], complex) or isinstance(s[2,:], complex):
+            print("Hyperbolicity lost for the speed at %s", cd.frameno)
 
         alpha=np.zeros((4,len(h_1(cd))))
         alpha[0:1,:]=((s[0:1,:]-u_1(cd)[:])**2 - g*h_1(cd)[:])/(g*h_1(cd)[:])
@@ -138,6 +140,34 @@ def setplot(plotdata,rho,dry_tolerance):
         eig_vec[3,:,:] = s[:,:]*alpha[:,:]
         return(eig_vec)
 
+    def eigenspace_velocity_3(cd):
+        total_depth_l = h_1(cd)+h_2(cd)
+        total_depth_r = h_1(cd)+h_2(cd)
+        mult_depth_l = h_1(cd)*h_2(cd)
+        mult_depth_r = h_1(cd)*h_2(cd)
+
+        s = np.zeros(h_1(cd).shape)
+        s = (h_2(cd)*u_1(cd) + h_1(cd)[:]*u_2(cd) / total_depth_l) + np.sqrt(g*one_minus_r*mult_depth_l/total_depth_l * (1-(u_1(cd)-u_2(cd))**2/(g*one_minus_r*total_depth_l)))
+        alpha=np.zeros(h_1(cd).shape)
+        alpha=((s-u_1(cd))**2 - g*h_1(cd))/(g*h_1(cd))
+
+        eig_vec=alpha*s
+        return(eig_vec)
+
+    def eigenspace_velocity_4(cd):
+        total_depth_l = h_1(cd)+h_2(cd)
+        total_depth_r = h_1(cd)+h_2(cd)
+        mult_depth_l = h_1(cd)*h_2(cd)
+        mult_depth_r = h_1(cd)*h_2(cd)
+
+        s = np.zeros(h_1(cd).shape)
+        s=(h_1(cd)*u_1(cd) + h_2(cd)*u_2(cd)) / total_depth_l - np.sqrt(g*total_depth_l)
+
+        alpha=np.zeros(h_1(cd).shape)
+        alpha=((s-u_1(cd))**2 - g*h_1(cd))/(g*h_1(cd))
+
+        eig_vec=s*alpha
+        return(eig_vec)
 
 
 
@@ -231,9 +261,10 @@ def setplot(plotdata,rho,dry_tolerance):
     y_limits_entropy_flux = [-0.023 , 0.003 ]
     y_limits_entropy_condition = y_limits_entropy_flux
     y_limits_entropy_shared =y_limits_entropy_flux
-    y_limits_richardson = [-0.01,5.0]
+    y_limits_richardson = [-0.1, 0.1]
     y_limits_Froude=[-1.0,3.0]
-    y_limits_eigenspace=[-5.0,1.0]
+    y_limits_eigenspace=[-12.0,12.0]
+    y_limits_eigenspace_4=[-15.0,15.0]
 
 
 
@@ -313,7 +344,7 @@ def setplot(plotdata,rho,dry_tolerance):
     #  Momentum
     # ========================================================================
     plotfigure = plotdata.new_plotfigure(name="momentum")
-    plotfigure.show = True
+    plotfigure.show = False
 
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.title = "Momentum"
@@ -483,7 +514,7 @@ def setplot(plotdata,rho,dry_tolerance):
     # Plot Entropy
     # ====================================================
 
-    plotfigure = plotdata.new_plotfigure(name="entropy")
+    plotfigure = plotdata.new_plotfigure(name="Entropy")
     plotfigure.show = True
 
     plotaxes = plotfigure.new_plotaxes()
@@ -518,7 +549,7 @@ def setplot(plotdata,rho,dry_tolerance):
     # Plot Entropy flux
     # ====================================================
 
-    plotfigure = plotdata.new_plotfigure(name="entropy flux")
+    plotfigure = plotdata.new_plotfigure(name="Entropy flux")
     plotfigure.show = True
 
     plotaxes = plotfigure.new_plotaxes()
@@ -552,7 +583,7 @@ def setplot(plotdata,rho,dry_tolerance):
     # Plot Entropy Condition
     # ====================================================
 
-    plotfigure = plotdata.new_plotfigure(name="entropy condition")
+    plotfigure = plotdata.new_plotfigure(name="Entropy condition")
     plotfigure.show = True
 
     plotaxes = plotfigure.new_plotaxes()
@@ -570,7 +601,7 @@ def setplot(plotdata,rho,dry_tolerance):
     # Plot Richardson Number
     # ====================================================
 
-    plotfigure = plotdata.new_plotfigure(name="kappa")
+    plotfigure = plotdata.new_plotfigure(name="Kappa")
     plotfigure.show = True
 
     plotaxes = plotfigure.new_plotaxes()
@@ -645,9 +676,9 @@ def setplot(plotdata,rho,dry_tolerance):
     plotaxes.afteraxes = lambda cd:froude_same_plot(cd,xlimits)
 
     # ========================================================================
-    #  Froude number
+    #  Eigenspaces
     # ========================================================================
-    plotfigure = plotdata.new_plotfigure(name = "eigenspace")
+    plotfigure = plotdata.new_plotfigure(name = "Eigenspace")
     plotfigure.show = True
 
     def eigenspace_same_plot(cd,xlimits):
@@ -696,23 +727,30 @@ def setplot(plotdata,rho,dry_tolerance):
         ax1.set_title('Solution at t = %3.2f' % cd.t)
         ax1.set_xlim(xlimits)
         ax1.set_ylim(y_limits_eigenspace)
-        # ax1.set_xlabel('x')
         ax1.set_ylabel('Eigenspace 1')
-
-
-        # froude_number_2
-        #ax2.plot(x,froude_number_2(cd),'k',color='green')
-
-
 
         # Add legend
         ax2.legend(loc=4)
         ax2.set_title('')
-        # ax1.set_title('Layer Velocities')
         ax2.set_ylabel('Eigenspace 2')
         ax2.set_xlabel('x (m)')
         ax2.set_xlim(xlimits)
         ax2.set_ylim(y_limits_eigenspace)
+
+
+        ax3.set_xlim(xlimits)
+        ax3.set_ylim(y_limits_eigenspace)
+        #ax3.set_ylabel('Eigenspace 3')
+
+        # Add legend
+        ax4.legend(loc=4)
+        ax4.set_title('')
+        #ax4.set_ylabel('Eigenspace 4')
+        ax4.set_xlabel('x (m)')
+        ax4.set_xlim(xlimits)
+        ax4.set_ylim(y_limits_eigenspace)
+
+
 
         # This does not work on all versions of matplotlib
         try:
@@ -722,6 +760,89 @@ def setplot(plotdata,rho,dry_tolerance):
 
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.afteraxes = lambda cd:eigenspace_same_plot(cd,xlimits)
+
+    # ========================================================================
+    #  Zoom eigenspaces
+    # ========================================================================
+    plotfigure = plotdata.new_plotfigure(name = "Eigenspaces 4")
+    plotfigure.show = True
+
+    def eigenspace_same_plot_zoom(cd,xlimits):
+        fig = mpl.gcf()
+        fig.clf()
+
+        # Get x coordinate values
+        x = cd.patch.dimensions[0].centers
+
+        # Create axes for each plot, sharing x axis
+        ax1 = fig.add_subplot(111)
+
+
+        #Eigenspace 4
+        ax1.plot(x,eigenspace_velocity(cd)[3,0,:],'k',color = 'blue')
+        ax1.plot(x,eigenspace_velocity(cd)[3,1,:],'k',color = 'red')
+        ax1.plot(x,eigenspace_velocity(cd)[3,2,:],'k',color = 'green')
+        ax1.plot(x,eigenspace_velocity(cd)[3,3,:],'k',color = 'grey')
+
+        # Remove ticks from top plot
+        locs,labels = mpl.xticks()
+        labels = ['' for i in xrange(len(locs))]
+        mpl.xticks(locs,labels)
+
+        # ax1.set_title('')
+        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_xlim(xlimits)
+        ax1.set_ylim(y_limits_eigenspace_4)
+        ax1.set_ylabel('Eigenspace 4')
+
+
+
+        # This does not work on all versions of matplotlib
+        try:
+            mpl.subplots_adjust(hspace=0.1)
+        except:
+            pass
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.afteraxes = lambda cd:eigenspace_same_plot_zoom(cd,xlimits)
+
+    # ====================================================
+    # Plot Eigenspace 3
+    # ====================================================
+
+    plotfigure = plotdata.new_plotfigure(name="Eigenspace 3")
+    plotfigure.show = False
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.title = "Eigenspace 3"
+    plotaxes.xlimits = xlimits
+    plotaxes.ylimits = 'auto'
+
+    # Richardson
+    plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
+    plotitem.plot_var = eigenspace_velocity_3
+    plotitem.color = 'b'
+    plotitem.show = True
+
+
+
+    # ====================================================
+    # Plot Eigenspace 4
+    # ====================================================
+
+    plotfigure = plotdata.new_plotfigure(name="Eigenspace 4")
+    plotfigure.show = False
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.title = "Eigenspace 4"
+    plotaxes.xlimits = xlimits
+    plotaxes.ylimits = 'auto'
+
+    # Richardson
+    plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
+    plotitem.plot_var = eigenspace_velocity_4
+    plotitem.color = 'b'
+    plotitem.show = True
 
 
 	# Parameters used only when creating html and/or latex hardcopy
