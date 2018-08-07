@@ -169,6 +169,24 @@ def setplot(plotdata,rho,dry_tolerance):
         eig_vec=s*alpha
         return(eig_vec)
 
+    def eigenvalues(cd):
+        index = np.nonzero(np.all([h_1(cd) > dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
+        eigenvalues1 = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+        eigenvalues2 = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+        eigenvalues3 = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+        eigenvalues4 = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+
+        frac = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+        sqrt1 = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+        sqrt2 = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+        frac[index] = (h_1(cd)[index]*u_2(cd)[index] + h_2(cd)[index]*u_1(cd)[index])/(h_1(cd)[index] + h_2(cd)[index])
+        sqrt1[index] = np.sqrt(g*(h_1(cd)[index] + h_2(cd)[index]))
+        sqrt2[index] = np.sqrt(one_minus_r*g*h_1(cd)[index]*h_2(cd)[index]/(h_1(cd)[index] + h_2(cd)[index])*(1-(u_1(cd)[index]-u_2(cd)[index])**2/(one_minus_r*g*(h_1(cd)[index] + h_2(cd)[index]))))
+        eigenvalues1[index] = frac[index]-sqrt1[index]
+        eigenvalues2[index] = frac[index]-sqrt2[index]
+        eigenvalues3[index] = frac[index]+sqrt2[index]
+        eigenvalues4[index] = frac[index]+sqrt1[index]
+        return([eigenvalues1, eigenvalues2, eigenvalues3, eigenvalues4])
 
 
     def entropy(cd):
@@ -235,6 +253,17 @@ def setplot(plotdata,rho,dry_tolerance):
         #print(Fr)
         return(Fr)
 
+    def composite_Froude_nb(cd):
+        index = np.nonzero(np.all([h_1(cd)>dry_tolerance, h_2(cd)>dry_tolerance], axis=0))
+        Fr = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+        Fr1_carre = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+        Fr2_carre = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
+        Fr1_carre[index] = (u_1(cd)[index])**2/(one_minus_r * g * h_1(cd)[index])
+        Fr2_carre[index] = (u_2(cd)[index])**2/(one_minus_r * g * h_2(cd)[index])
+        Fr[index] = np.sqrt( Fr1_carre[index] + Fr2_carre[index] )
+        #Fr[index] = np.sqrt(Fr1_carre[index] + Fr2_carre[index]  - one_minus_r * np.sqrt(Fr1_carre) * np.sqrt(Fr2_carre))
+        return(Fr)
+
     def dry_tolerance_(cd):
         return ([dry_tolerance]*(len(cd.q[1])) )
 
@@ -244,13 +273,26 @@ def setplot(plotdata,rho,dry_tolerance):
     def flow_type(cd):
         return ([1]*len(cd.q[1]))
 
+    def charac(cd):
+        value1=[0]*500
+        value2=[0]*500
+        value3=[0]*500
+        value4=[0]*500
+
+        (eigenvalues1, eigenvalues2, eigenvalues3, eigenvalues4) = eigenvalues(cd)
+        values1=[k*eigenvalues1[250]/1000 for k in range(0,1000,2)]
+        values2=[k*eigenvalues2[250]/1000 for k in range(0,1000,2)]
+        values3=[k*eigenvalues3[250]/1000 for k in range(0,1000,2)]
+        values4=[k*eigenvalues4[250]/1000 for k in range(0,1000,2)]
+        return([values1, values2, values3, values4])
+
 
     plotdata.clearfigures()  # clear any old figures,axes,items data
 
     # Window Settings
     xlimits = [0.0,1.0]
     xlimits_zoomed = [0.45,0.55]
-    ylimits_momentum = [-0.004,0.004]
+    ylimits_momentum = [-2.0,2.0]
     ylimits_depth = [-1.0,0.5]
     ylimits_depth_zoomed = ylimits_depth
     ylimits_velocities = [-0.75,0.75]
@@ -261,10 +303,11 @@ def setplot(plotdata,rho,dry_tolerance):
     y_limits_entropy_flux = [-0.023 , 0.003 ]
     y_limits_entropy_condition = y_limits_entropy_flux
     y_limits_entropy_shared =y_limits_entropy_flux
-    y_limits_richardson = [-0.1, 0.1]
-    y_limits_Froude=[-1.0,3.0]
+    y_limits_richardson = [-0.1,17.0]
+    y_limits_Froude=[-1.0,10.0]
     y_limits_eigenspace=[-12.0,12.0]
     y_limits_eigenspace_4=[-15.0,15.0]
+    y_limits_charac=[-5.0,25.0]
 
 
 
@@ -272,7 +315,7 @@ def setplot(plotdata,rho,dry_tolerance):
     #  Depth and Momentum Plot
     # ========================================================================
     plotfigure = plotdata.new_plotfigure(name='Depth and Momentum')
-    plotfigure.show = True
+    plotfigure.show = False
 
     def twin_axes(cd,xlimits):
         fig = mpl.gcf()
@@ -344,7 +387,7 @@ def setplot(plotdata,rho,dry_tolerance):
     #  Momentum
     # ========================================================================
     plotfigure = plotdata.new_plotfigure(name="momentum")
-    plotfigure.show = False
+    plotfigure.show = True
 
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.title = "Momentum"
@@ -675,6 +718,24 @@ def setplot(plotdata,rho,dry_tolerance):
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.afteraxes = lambda cd:froude_same_plot(cd,xlimits)
 
+    # ====================================================
+    # Plot Richardson Number
+    # ====================================================
+
+    plotfigure = plotdata.new_plotfigure(name="Composite Froude")
+    plotfigure.show = True
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.title = "Composite Froude number"
+    plotaxes.xlimits = xlimits
+    plotaxes.ylimits = 'auto'
+
+    # Composite Froude number
+    plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
+    plotitem.plot_var = composite_Froude_nb
+    plotitem.color = 'b'
+    plotitem.show = True
+
     # ========================================================================
     #  Eigenspaces
     # ========================================================================
@@ -843,6 +904,52 @@ def setplot(plotdata,rho,dry_tolerance):
     plotitem.plot_var = eigenspace_velocity_4
     plotitem.color = 'b'
     plotitem.show = True
+
+    # ========================================================================
+    #  Zoom eigenspaces
+    # ========================================================================
+    plotfigure = plotdata.new_plotfigure(name = "Characteristic")
+    plotfigure.show = True
+
+    def charac_same_plot(cd,xlimits):
+        fig = mpl.gcf()
+        fig.clf()
+
+        # Get x coordinate values
+        x = cd.patch.dimensions[0].centers
+
+        # Create axes for each plot, sharing x axis
+        ax1 = fig.add_subplot(111)
+
+
+        #Eigenspace 4
+        ax1.plot(x,charac(cd)[0],'k',color = 'blue')
+        ax1.plot(x,charac(cd)[1],'k',color = 'red')
+        ax1.plot(x,charac(cd)[2],'k',color = 'green')
+        ax1.plot(x,charac(cd)[3],'k',color = 'grey')
+        ax1.plot(x,limit_entropy_condition(cd),'k',linestyle=':',color = 'red')
+
+        # Remove ticks from top plot
+        locs,labels = mpl.xticks()
+        labels = ['' for i in xrange(len(locs))]
+        mpl.xticks(locs,labels)
+
+        # ax1.set_title('')
+        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_xlim(xlimits)
+        ax1.set_ylim(y_limits_charac)
+        ax1.set_ylabel('t')
+
+
+
+        # This does not work on all versions of matplotlib
+        try:
+            mpl.subplots_adjust(hspace=0.1)
+        except:
+            pass
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.afteraxes = lambda cd:charac_same_plot(cd,xlimits)
 
 
 	# Parameters used only when creating html and/or latex hardcopy
