@@ -274,17 +274,15 @@ def setplot(plotdata,rho,dry_tolerance):
         return ([1]*len(cd.q[1]))
 
     def charac(cd):
-        value1=[0]*500
-        value2=[0]*500
-        value3=[0]*500
-        value4=[0]*500
+        values1=[0]*500
+        values2=[0]*500
 
         (eigenvalues1, eigenvalues2, eigenvalues3, eigenvalues4) = eigenvalues(cd)
-        values1=[k*eigenvalues1[250]/1000 for k in range(0,1000,2)]
-        values2=[k*eigenvalues2[250]/1000 for k in range(0,1000,2)]
-        values3=[k*eigenvalues3[250]/1000 for k in range(0,1000,2)]
-        values4=[k*eigenvalues4[250]/1000 for k in range(0,1000,2)]
-        return([values1, values2, values3, values4])
+        values1[0:249]=[(k-500)*eigenvalues1[249]/1000 for k in range(0,500,2)]
+        values2[0:249]=[(k-500)*eigenvalues2[249]/1000 for k in range(0,500,2)]
+        values2[250:501]=[(k-500)*eigenvalues3[250]/1000 for k in range(500,1000,2)]
+        values1[250:501]=[(k-500)*eigenvalues4[250]/1000 for k in range(500,1000,2)]
+        return([values1, values2])
 
 
     plotdata.clearfigures()  # clear any old figures,axes,items data
@@ -924,9 +922,9 @@ def setplot(plotdata,rho,dry_tolerance):
 
         #Eigenspace 4
         ax1.plot(x,charac(cd)[0],'k',color = 'blue')
-        ax1.plot(x,charac(cd)[1],'k',color = 'red')
-        ax1.plot(x,charac(cd)[2],'k',color = 'green')
-        ax1.plot(x,charac(cd)[3],'k',color = 'grey')
+        ax1.plot(x,charac(cd)[1],'k',color = 'green')
+        #ax1.plot(x,charac(cd)[2],'k',color = 'green')
+        #ax1.plot(x,charac(cd)[3],'k',color = 'grey')
         ax1.plot(x,limit_entropy_condition(cd),'k',linestyle=':',color = 'red')
 
         # Remove ticks from top plot
