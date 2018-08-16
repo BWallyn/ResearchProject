@@ -7,6 +7,8 @@ from clawpack.riemann import layered_shallow_water_1D
 import clawpack.clawutil.runclaw as runclaw
 import clawpack.pyclaw.plot as plot
 
+from clawpack.visclaw.data import ClawPlotData
+
 #import clawpack.pyclaw.plotters.data.ClawPlotData as cpd
 import os
 
@@ -111,6 +113,7 @@ def dry_state(num_cells,eigen_method,entropy_fix,velocity,**kargs):
     # ============================
     num_layers = 2
 
+    global x
     x = pyclaw.Dimension(0.0, 1.0, num_cells)
     domain = pyclaw.Domain([x])
     state = pyclaw.State(domain, 2 * num_layers, 3 + num_layers)
@@ -158,7 +161,7 @@ def dry_state(num_cells,eigen_method,entropy_fix,velocity,**kargs):
     # Output parameters
     controller.output_style = 3
     controller.nstepout = 1
-    controller.num_output_times = number_frames
+    controller.num_output_times = 100
     controller.write_aux_init = True
     controller.outdir = outdir
     controller.write_aux = True
@@ -335,10 +338,6 @@ def entropy_condition_is_valid(cd):
             entropy_actual=entropy(Solution(index_t-1, path=outdir,read_aux=True))[index_x]
 
             entropy_cond[index_x]= entropy_next-entropy_actual + (delta_t/delta_x)*(entropy_flux_actual-entropy_flux_prev)
-
-
-        #print(eigenspace_velocity(cd))
-
         return entropy_cond
     else :
         return([0]*500)
@@ -402,7 +401,7 @@ def solutions_all(values_to_plot,nb_frames,**kargs):
 
 
 
-def plot_all(values_to_plot,nb_test,nb_frames,**kargs):
+def plot_all(values_to_plot,nb_test,nb_frames,format='ascii',msgfile='',**kargs):
 
     # ============================
     # = Create Initial Condition =
@@ -452,54 +451,38 @@ def plot_all(values_to_plot,nb_test,nb_frames,**kargs):
     # Load one minus r
     #one_minus_r=Solution(0, path=outdir,read_aux=True).state.problem_data['one_minus_r']
 
-    xlimits_zoom=(200, 300) #Little problem, need to check that
-    ylimits=(-1.1,0.1)
+    xlimits=[]
 
     for t in range(nb_frames):
         #Depths
-        # plotfigure_depths = cpd.new_plotfigure(name='Depths')
-        # plotfigure_depths.show=True
-        # plotaxes_depths = plotfigure_depths.new_plotaxes()
-        # plotaxes_depths.title = "Depths"
-        # plotaxes_depths.xlimis = xlimits
-        # plotaxes_depths.ylimits = 'auto'
-        fig2 = plt.figure(num=2)
-        plt.xlabel('x(m)')
-        plt.ylabel('Depths')
-        plt.title('Solution at t = %3.5f' % t)
-        plt.ylim(ylimits)
+        plotdata=ClawPlotData()
 
-        #Depth zoom
-        fig3 = plt.figure(num=3)
-        plt.xlabel('x(m)')
-        plt.ylabel('Depths')
-        plt.title('Solution zoomed at t = %3.5f' % t )
-        plt.xlim(xlimits_zoom)
-        plt.ylim(ylimits)
+        plotfigure_depths = plotdata.new_plotfigure(name='Depths')
+        plotfigure_depths.show=True
+        plotaxes_depths = plotfigure_depths.new_plotaxes()
+        plotaxes_depths.title = "Depths"
+        plotaxes_depths.xlimits = xlimits
+        plotaxes_depths.ylimits = 'auto'
+        # fig2 = plt.figure(num=2)
+        # plt.xlabel('x(m)')
+        # plt.ylabel('Depths')
+        # plt.title('Solution at t = %3.5f' % t)
+        # plt.ylim(-1.1, 0.1)
 
         #Entropy
-        fig7 = plt.figure(num=7)
+        fig7 = plt.figure(num=2)
         plt.xlabel('x(m)')
         plt.ylabel('Entropy')
         plt.title('Entropy as t = %3.5f' % t)
-
-        #Entropy flux
-        fig8 = plt.figure(num=8)
-        plt.xlabel('x(m)')
-        plt.ylabel('Entropy flux')
-        plt.title('Entropy flux at t = %3.5f' % t)
-
-        #Entropy condition
-        fig9 = plt.figure(num=9)
-        plt.xlabel('x(m)')
-        plt.ylabel('Value similar to entropy')
-        plt.title('Entropy condition at t = %3.5f' % t)
 
         #Composite Froude number
         fig12 = plt.figure(num=12)
         plt.xlabel('x(m)')
         plt.ylabel('Composite Froude number')
         plt.title('Composite Froude number at t = %3.5f' % t)
+        plotdata.outdir = outdir
+        plotdata.plotdir = plots_dir
+        print(plotdir)
 
         Solutions_=[]
         x = [k/1000 for k in range(0,1000,2)]
@@ -514,7 +497,10 @@ def plot_all(values_to_plot,nb_test,nb_frames,**kargs):
             else:
                 prefix = "".join((prefix, "F"))
             outdir,plotdir,log_path = runclaw.create_output_paths(name, prefix, **kargs)
+
+            #exec("cd_"+str(i)+"='"Solution(t,path=outdir,read_aux=True)+"'")
             cd = Solution(t,path=outdir,read_aux=True)
+            Solutions_ += [Solution(t,path=outdir,read_aux=True)]
 
             #=====Plotting=====
             plot_color='g'
@@ -525,56 +511,38 @@ def plot_all(values_to_plot,nb_test,nb_frames,**kargs):
                     plot_style = ':'
                 else :
                     plot_color = 'b'
-                    plot_style = '-.'            #plt.close()
-            #Depth
-            # plotitem_depths = plotaxes_depths.new_plotitem(plot_type='1d')
-            # plotitem_depths.plot_var = Solutions_[i]
-            # plotitem_depths.plotstyle='k'
-            # plotitem_depths.color=plot_color
-            # plotitem_depths.show=True
-            plt.figure(num=2)
-            plt.plot(bathy(cd),'k')
-            plt.plot(eta_1(cd),'k',color=plot_color,linestyle=plot_style)
-            plt.plot(eta_2(cd),'k',color=plot_color,linestyle=plot_style)
-            depthname = 'frame00%sfig1002.png' % t
-            plt.savefig(plots_dir + depthname)
-
-            #Depth zoom
-            plt.figure(num=3)
-            plt.plot(bathy(cd),'k')
-            plt.plot(eta_1(cd),'k',color=plot_color,linestyle=plot_style)
-            plt.plot(eta_2(cd),'k',color=plot_color,linestyle=plot_style)
-            depthzoomname = 'frame00%sfig1003.png' % t
-            plt.savefig(plots_dir + depthzoomname)
+                    plot_style = '-.'
+            #depth
+            #plotdata.setplot = setplot
+            plotdata.format = format
+            plotdata.msgfile = msgfile
+            plotitem_depths = plotaxes_depths.new_plotitem(plot_type='1d')
+            plotitem_depths.plot_var = eta_1
+            plotitem_depths.plotstyle='k'
+            plotitem_depths.color=plot_color
+            plotitem_depths.show=True
+            # plt.figure(num=2)
+            # plt.plot(bathy(cd),'k')
+            # plt.plot(eta_1(cd),'k',color=plot_color,linestyle=plot_style)
+            # plt.plot(eta_2(cd),'k',color=plot_color,linestyle=plot_style)
+            # depthname = 'frame00%sfig1002.png' % t
+            # plt.savefig(plots_dir + depthname)
+            #plt.close()
 
             #Entropy
-            plt.figure(num=7)
-            plt.plot(entropy(cd),'k',color=plot_color,linestyle=plot_style)
-            entropyname = 'frame00%sfig1007.png' % t
-            plt.savefig(plots_dir + entropyname)
-
-            #Entropy flux
-            plt.figure(num=8)
-            plt.plot(entropy_flux(cd),'k',color=plot_color,linestyle=plot_style)
-            entropyfluxname='frame00%sfig1008.png' % t
-            plt.savefig(plots_dir + entropyfluxname)
-
-            #Entropy condition
-            plt.figure(num=9)
-            plt.plot(entropy_condition_is_valid(cd),'k',color=plot_color,linestyle=plot_style)
-            entropycondname='frame00%sfig1009.png' % t
-            plt.savefig(plots_dir + entropycondname)
-
-            #Composite Froude number
-            plt.figure(num=12)
-            plt.plot(composite_Froude_nb(cd),'k',color=plot_color,linestyle=plot_style)
-            froudename = 'frame00%sfig1012.png' % ( t )
-            plt.savefig(plots_dir + froudename)
+            # plt.figure(num=7)
+            # plt.plot(entropy(cd),'k',color=plot_color,linestyle=plot_style)
+            # entropyname = 'frame00%sfig1007.png' % t
+            # plt.savefig(plots_dir + entropyname)
+            #
+            # #Composite Froude number
+            # plt.figure(num=12)
+            # plt.plot(composite_Froude_nb(cd),'k',color=plot_color,linestyle=plot_style)
+            # froudename = 'frame00%sfig1012.png' % ( t )
+            # plt.savefig(plots_dir + froudename)
             #plt.close()
 
         plt.close('all')
 
 if __name__ == "__main__":
-    global number_frames
-    number_frames = 10
-    solutions_all([1.0,2.0,3.9,8.0],number_frames)
+    solutions_all([1.0,2.0,3.9,8.0],100)
