@@ -290,10 +290,10 @@ def setplot(plotdata,rho,dry_tolerance):
     # Window Settings
     xlimits = [0.0,1.0]
     xlimits_zoomed = [0.45,0.55]
-    ylimits_momentum = [-2.0,2.0]
+    ylimits_momentum = [-5.0,5.0]
     ylimits_depth = [-1.0,0.5]
     ylimits_depth_zoomed = ylimits_depth
-    ylimits_velocities = [-0.75,0.75]
+    ylimits_velocities = [-8.75,8.75]
     ylimits_velocities_zoomed = ylimits_velocities
 
     y_limits_depth_only=[0.,5.0]
@@ -304,8 +304,8 @@ def setplot(plotdata,rho,dry_tolerance):
     y_limits_richardson = [-0.1,17.0]
     y_limits_Froude=[-1.0,10.0]
     y_limits_eigenspace=[-12.0,12.0]
-    y_limits_eigenspace_4=[-15.0,15.0]
-    y_limits_charac=[-5.0,25.0]
+    y_limits_eigenspace_4=[-30.0,15.0]
+    y_limits_charac=[-5.0,10.0]
 
 
 
@@ -343,7 +343,7 @@ def setplot(plotdata,rho,dry_tolerance):
         mpl.xticks(locs,labels)
 
         # ax1.set_title('')
-        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_title('Solution at t = %3.5f' % cd.t)
         ax1.set_xlim(xlimits)
         ax1.set_ylim(ylimits_depth)
         # ax1.set_xlabel('x')
@@ -485,16 +485,16 @@ def setplot(plotdata,rho,dry_tolerance):
     # Parameters used only when creating html and/or latex hardcopy
     # e.g., via pyclaw.plotters.frametools.printframes:
 
-    plotdata.printfigs = True                # print figures
-    plotdata.print_format = 'png'            # file format
-    plotdata.print_framenos = 'all'          # list of frames to print
-    plotdata.print_fignos = 'all'            # list of figures to print
-    plotdata.html = True                     # create html files of plots?
-    plotdata.html_homelink = '../README.html'   # pointer for top of index
-    plotdata.latex = True                    # create latex file of plots?
-    plotdata.latex_figsperline = 2           # layout of plots
-    plotdata.latex_framesperline = 1         # layout of plots
-    plotdata.latex_makepdf = False           # also run pdflatex?
+    # plotdata.printfigs = True                # print figures
+    # plotdata.print_format = 'png'            # file format
+    # plotdata.print_framenos = 'all'          # list of frames to print
+    # plotdata.print_fignos = 'all'            # list of figures to print
+    # plotdata.html = True                     # create html files of plots?
+    # plotdata.html_homelink = '../README.html'   # pointer for top of index
+    # plotdata.latex = True                    # create latex file of plots?
+    # plotdata.latex_figsperline = 2           # layout of plots
+    # plotdata.latex_framesperline = 1         # layout of plots
+    # plotdata.latex_makepdf = False           # also run pdflatex?
 
     # ========================================================================
     #  h-values
@@ -535,7 +535,7 @@ def setplot(plotdata,rho,dry_tolerance):
         mpl.xticks(locs,labels)
 
         # ax1.set_title('')
-        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_title('Solution at t = %3.5f' % cd.t)
         ax1.set_xlim(xlimits)
         ax1.set_ylim(ylimits_depth)
         # ax1.set_xlabel('x')
@@ -571,19 +571,19 @@ def setplot(plotdata,rho,dry_tolerance):
 
 
 
-	# Parameters used only when creating html and/or latex hardcopy
-    # e.g., via pyclaw.plotters.frametools.printframes:
-
-    plotdata.printfigs = True                # print figures
-    plotdata.print_format = 'png'            # file format
-    plotdata.print_framenos = 'all'          # list of frames to print
-    plotdata.print_fignos = 'all'            # list of figures to print
-    plotdata.html = True                     # create html files of plots?
-    plotdata.html_homelink = '../README.html'   # pointer for top of index
-    plotdata.latex = True                    # create latex file of plots?
-    plotdata.latex_figsperline = 2           # layout of plots
-    plotdata.latex_framesperline = 1         # layout of plots
-    plotdata.latex_makepdf = False           # also run pdflatex?
+	# # Parameters used only when creating html and/or latex hardcopy
+    # # e.g., via pyclaw.plotters.frametools.printframes:
+    #
+    # plotdata.printfigs = True                # print figures
+    # plotdata.print_format = 'png'            # file format
+    # plotdata.print_framenos = 'all'          # list of frames to print
+    # plotdata.print_fignos = 'all'            # list of figures to print
+    # plotdata.html = True                     # create html files of plots?
+    # plotdata.html_homelink = '../README.html'   # pointer for top of index
+    # plotdata.latex = True                    # create latex file of plots?
+    # plotdata.latex_figsperline = 2           # layout of plots
+    # plotdata.latex_framesperline = 1         # layout of plots
+    # plotdata.latex_makepdf = False           # also run pdflatex?
 
 
     # ====================================================
@@ -609,16 +609,16 @@ def setplot(plotdata,rho,dry_tolerance):
 	# Parameters used only when creating html and/or latex hardcopy
     # e.g., via pyclaw.plotters.frametools.printframes:
 
-    plotdata.printfigs = True                # print figures
-    plotdata.print_format = 'png'            # file format
-    plotdata.print_framenos = 'all'          # list of frames to print
-    plotdata.print_fignos = 'all'            # list of figures to print
-    plotdata.html = True                     # create html files of plots?
-    plotdata.html_homelink = '../README.html'   # pointer for top of index
-    plotdata.latex = True                    # create latex file of plots?
-    plotdata.latex_figsperline = 2           # layout of plots
-    plotdata.latex_framesperline = 1         # layout of plots
-    plotdata.latex_makepdf = False           # also run pdflatex?
+    # plotdata.printfigs = True                # print figures
+    # plotdata.print_format = 'png'            # file format
+    # plotdata.print_framenos = 'all'          # list of frames to print
+    # plotdata.print_fignos = 'all'            # list of figures to print
+    # plotdata.html = True                     # create html files of plots?
+    # plotdata.html_homelink = '../README.html'   # pointer for top of index
+    # plotdata.latex = True                    # create latex file of plots?
+    # plotdata.latex_figsperline = 2           # layout of plots
+    # plotdata.latex_framesperline = 1         # layout of plots
+    # plotdata.latex_makepdf = False           # also run pdflatex?
 
     # ====================================================
     # Plot Entropy Condition
@@ -685,7 +685,7 @@ def setplot(plotdata,rho,dry_tolerance):
         mpl.xticks(locs,labels)
 
         # ax1.set_title('')
-        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_title('Solution at t = %3.5f' % cd.t)
         ax1.set_xlim(xlimits)
         ax1.set_ylim(y_limits_Froude)
         # ax1.set_xlabel('x')
@@ -783,7 +783,7 @@ def setplot(plotdata,rho,dry_tolerance):
         mpl.xticks(locs,labels)
 
         # ax1.set_title('')
-        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_title('Solution at t = %3.5f' % cd.t)
         ax1.set_xlim(xlimits)
         ax1.set_ylim(y_limits_eigenspace)
         ax1.set_ylabel('Eigenspace 1')
@@ -849,7 +849,7 @@ def setplot(plotdata,rho,dry_tolerance):
         mpl.xticks(locs,labels)
 
         # ax1.set_title('')
-        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_title('Solution at t = %3.5f' % cd.t)
         ax1.set_xlim(xlimits)
         ax1.set_ylim(y_limits_eigenspace_4)
         ax1.set_ylabel('Eigenspace 4')
@@ -933,7 +933,7 @@ def setplot(plotdata,rho,dry_tolerance):
         mpl.xticks(locs,labels)
 
         # ax1.set_title('')
-        ax1.set_title('Solution at t = %3.2f' % cd.t)
+        ax1.set_title('Solution at t = %3.5f' % cd.t)
         ax1.set_xlim(xlimits)
         ax1.set_ylim(y_limits_charac)
         ax1.set_ylabel('t')

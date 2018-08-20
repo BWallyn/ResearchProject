@@ -7,13 +7,15 @@ from clawpack.riemann import layered_shallow_water_1D
 import clawpack.clawutil.runclaw as runclaw
 import clawpack.pyclaw.plot as plot
 
-import multilayer as ml
+import multilayer_epsi as ml
+
+
 
 def dry_state(num_cells,eigen_method,entropy_fix,**kargs):
     r"""Run and plot a multi-layer dry state problem"""
 
     # Construct output and plot directory paths
-    name = 'multilayer/dry_state_rarefaction'
+    name = 'multilayer_epsi/dry_state_rarefaction_epsi'
     prefix = 'ml_e%s_m%s_fix' % (eigen_method, num_cells)
 
     if entropy_fix:
@@ -100,11 +102,13 @@ def dry_state(num_cells,eigen_method,entropy_fix,**kargs):
     ml.aux.set_h_hat(solution.state, 0.5, [0.0,-0.5], [0.0,-1.0])
 
     # Set sea at rest initial condition
-    q_left = [0.5 * state.problem_data['rho'][0], -8.0*0.5 * state.problem_data['rho'][0],
-              0.5 * state.problem_data['rho'][1], -8.0*0.5 * state.problem_data['rho'][1]]
-    q_right = [0.5 * state.problem_data['rho'][0], 8.0*0.5 * state.problem_data['rho'][0],
-               0.5 * state.problem_data['rho'][1], 8.0*0.5 * state.problem_data['rho'][1]]
-    ml.qinit.set_riemann_init_condition(solution.state, 0.5, q_left, q_right)
+    q_left = [0.5 * state.problem_data['rho'][0], -1.2*0.5 * state.problem_data['rho'][0],
+              0.5 * state.problem_data['rho'][1], -1.2*0.5 * state.problem_data['rho'][1]]
+    q_right = [0.5 * state.problem_data['rho'][0], 1.2*0.5 * state.problem_data['rho'][0],
+               0.5 * state.problem_data['rho'][1], 1.2*0.5 * state.problem_data['rho'][1]]
+
+    wave_family=3
+    ml.qinit.set_wave_epsilon_init_condition(solution.state, wave_family, 0.5,0.1,q_left, q_right)
 
 
     # ================================

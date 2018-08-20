@@ -5,7 +5,7 @@ r""" Run the suite of tests for the 1d two-layer equations with rarefaction"""
 
 from clawpack.riemann import layered_shallow_water_1D
 import clawpack.clawutil.runclaw as runclaw
-import clawpack.pyclaw.plot as plot
+import clawpack.pyclaw.plot as pyplot
 
 #import clawpack.pyclaw.plotters.data.ClawPlotData as cpd
 import os
@@ -317,15 +317,15 @@ def entropy_flux(cd):
     return entropy_flux
 
 
-def entropy_condition_is_valid(cd):
+def entropy_condition_is_valid(cd,t,outdir,dx):
 
-    index_t = int(cd.frameno)
+    index_t = t
     if index_t>0 :
         #entropy at t=0 doesn't exist
         (x,) = np.nonzero(np.all([h_1(cd)>dry_tolerance, h_2(cd)>dry_tolerance],axis=0))
         len_x = len(x)
         delta_t = Solution(index_t, path=outdir,read_aux=True).t - Solution(index_t-1, path=outdir,read_aux=True).t
-        delta_x = cd.dx
+        delta_x = dx
         entropy_cond = np.zeros(min(h_1(cd).shape, h_2(cd).shape))
         for index_x in range(len_x-1):
             index_x_next = index_x + 1
@@ -436,6 +436,7 @@ def plot_all(values_to_plot,nb_test,nb_frames,**kargs):
     global b
     b = Solution(0, path=outdir,read_aux=True).state.aux[bathy_index,:]
 
+
     # Set method parameters, this ensures it gets to the Fortran routines
     eigen_method=Solution(0, path=outdir,read_aux=True).state.problem_data['eigen_method']
     dry_tolerance=Solution(0, path=outdir,read_aux=True).state.problem_data['dry_tolerance']
@@ -443,6 +444,11 @@ def plot_all(values_to_plot,nb_test,nb_frames,**kargs):
     entropy_fix=Solution(0, path=outdir,read_aux=True).state.problem_data['entropy_fix']
     #num_cells=Solution(0,path=outdir,read_aux=True).state.problem_data['num_cells'] #does not work
     num_cells=500
+
+    import clawpack.pyclaw as pyclaw
+    global x
+    x = pyclaw.Dimension(0.0, 1.0, num_cells)
+    print()
 
     plt.clf()
     # Load bathymetery
@@ -501,8 +507,6 @@ def plot_all(values_to_plot,nb_test,nb_frames,**kargs):
         plt.ylabel('Composite Froude number')
         plt.title('Composite Froude number at t = %3.5f' % t)
 
-        Solutions_=[]
-        x = [k/1000 for k in range(0,1000,2)]
         print('Plot the figures at frame %s' % t)
         for i in range(nb_test):
             # Construct output and plot directory paths
@@ -526,6 +530,9 @@ def plot_all(values_to_plot,nb_test,nb_frames,**kargs):
                 else :
                     plot_color = 'b'
                     plot_style = '-.'            #plt.close()
+
+            #legend_to_show='velocity: ' + str(values_to_plot[i])
+            legend_to_show='Velocity: ' + str(values_to_plot[i])
             #Depth
             # plotitem_depths = plotaxes_depths.new_plotitem(plot_type='1d')
             # plotitem_depths.plot_var = Solutions_[i]
@@ -534,41 +541,47 @@ def plot_all(values_to_plot,nb_test,nb_frames,**kargs):
             # plotitem_depths.show=True
             plt.figure(num=2)
             plt.plot(bathy(cd),'k')
-            plt.plot(eta_1(cd),'k',color=plot_color,linestyle=plot_style)
+            plt.plot(eta_1(cd),'k',color=plot_color,linestyle=plot_style,label=legend_to_show )
             plt.plot(eta_2(cd),'k',color=plot_color,linestyle=plot_style)
             depthname = 'frame00%sfig1002.png' % t
+            plt.legend()
             plt.savefig(plots_dir + depthname)
 
             #Depth zoom
             plt.figure(num=3)
             plt.plot(bathy(cd),'k')
-            plt.plot(eta_1(cd),'k',color=plot_color,linestyle=plot_style)
+            plt.plot(eta_1(cd),'k',color=plot_color,linestyle=plot_style,label=legend_to_show)
             plt.plot(eta_2(cd),'k',color=plot_color,linestyle=plot_style)
             depthzoomname = 'frame00%sfig1003.png' % t
+            plt.legend()
             plt.savefig(plots_dir + depthzoomname)
 
             #Entropy
             plt.figure(num=7)
-            plt.plot(entropy(cd),'k',color=plot_color,linestyle=plot_style)
+            plt.plot(entropy(cd),'k',color=plot_color,linestyle=plot_style,label=legend_to_show)
             entropyname = 'frame00%sfig1007.png' % t
+            plt.legend()
             plt.savefig(plots_dir + entropyname)
 
             #Entropy flux
             plt.figure(num=8)
-            plt.plot(entropy_flux(cd),'k',color=plot_color,linestyle=plot_style)
+            plt.plot(entropy_flux(cd),'k',color=plot_color,linestyle=plot_style,label=legend_to_show)
             entropyfluxname='frame00%sfig1008.png' % t
+            plt.legend()
             plt.savefig(plots_dir + entropyfluxname)
 
             #Entropy condition
             plt.figure(num=9)
-            plt.plot(entropy_condition_is_valid(cd),'k',color=plot_color,linestyle=plot_style)
+            plt.plot(entropy_condition_is_valid(cd,t,outdir,x.delta),'k',color=plot_color,linestyle=plot_style,label=legend_to_show)
             entropycondname='frame00%sfig1009.png' % t
+            plt.legend()
             plt.savefig(plots_dir + entropycondname)
 
             #Composite Froude number
             plt.figure(num=12)
-            plt.plot(composite_Froude_nb(cd),'k',color=plot_color,linestyle=plot_style)
+            plt.plot(composite_Froude_nb(cd),'k',color=plot_color,linestyle=plot_style,label=legend_to_show)
             froudename = 'frame00%sfig1012.png' % ( t )
+            plt.legend()
             plt.savefig(plots_dir + froudename)
             #plt.close()
 
@@ -576,5 +589,5 @@ def plot_all(values_to_plot,nb_test,nb_frames,**kargs):
 
 if __name__ == "__main__":
     global number_frames
-    number_frames = 10
+    number_frames = 100
     solutions_all([1.0,2.0,3.9,8.0],number_frames)

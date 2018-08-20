@@ -191,7 +191,7 @@ def setplot(plotdata,rho,dry_tolerance):
     ylimits_velocities = [-0.75,0.75]
     ylimits_velocities_zoomed = ylimits_velocities
     y_limits_entropy = [-5.0 , 0.5]
-    y_limits_entropy_flux = [-0.023 , 0.003 ]
+    y_limits_entropy_flux = [-0.023 , 0.013 ]
     y_limits_entropy_condition = y_limits_entropy_flux
     y_limits_entropy_shared =y_limits_entropy_flux
 
